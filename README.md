@@ -124,3 +124,66 @@ The AI Voice Receptionist delivers **immediate, measurable ROI** for small Belgi
 The pilot-first, low-barrier pricing model enables early traction and case-study generation while maintaining sustainable margins.
 
 ---
+
+12. Strategy & Roadmap (Added Section)
+
+The AI Receptionist will begin as a local automation tool for Liège clinics, then scale regionally (Wallonia → Brussels → Luxembourg).
+We’ll remain lean and self-funded, requiring only ~15 hours/week combined from founders.
+
+Growth Stages:
+
+Founding Partner Pilot (0–3 months): 5 clinics, free 3-month pilot → 50% discount for 12 months.
+
+Validation Stage (4–12 months): Paid rollout (€450/month) with free trial; goal €5k MRR.
+
+Scaling Stage (Years 2–3): Expand to 70+ clinics; target €38–40k MRR.
+
+Roles:
+
+Robin: Product, sales, onboarding.
+
+Reet: Backend, automation (n8n, VAPI, APIs).
+
+Shared: UX, design, content.
+
+13. Financial Summary (Added Section)
+
+Revenue Assumptions:
+
+ARPU: €450 → €550 (3 years).
+
+Cost: ~€200/month.
+
+Profit margin: ≈90%.
+
+Profit split: 50/50 (Robin & Reet).
+
+Year	Avg Clinics	ARPU (€)	Revenue (€)	Profit (€)	Each Founder (€)
+1	10	450	54,000	52,000	26,000
+2	35	500	210,000	202,000	101,000
+3	70	550	462,000	444,000	222,000
+
+Goal: €38–40k MRR by Year 3, providing ~€15k net/month each.
+
+14. Key Milestones
+
+Month 3: 1 live pilot clinic & testimonials.
+
+Month 6: 5+ clinics, €2–3k MRR.
+
+Month 12: 10 clinics, €5k MRR.
+
+Year 2: 35 clinics, €17k MRR.
+
+Year 3: 70 clinics, €38k+ MRR.
+
+15. Exit & Expansion Paths
+
+Once stable and profitable:
+
+Expand regionally across Benelux.
+
+Convert to SaaS (self-service setup).
+
+License AI backend to local scheduling providers (Doctena, Progenda, etc.).
+
