@@ -1,0 +1,33 @@
+.env
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+.DS_Store
+
+# Python virtual envs
+.venv/
+venv/
+env/
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+.mypy_cache/
+.hypothesis/
+.pytype/
+.coverage
+coverage.xml
+htmlcov/
+
+# Editors/IDEs
+.vscode/
+.idea/
+
+# Node / JS
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-store/
+

@@ -1,0 +1,24 @@
+{
+  "name": "mediflow",
+  "version": "1.0.0",
+  "description": "This repository contains an incremental implementation of an AI-driven appointment booking assistant. Work is organized by phases under `docs/plan/` and is grounded in the functional requirements in `docs/ai_appointment_booking_assistant_functional_requirements_markdown.md`.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "mcp:github": "github-mcp-server mcp",
+    "mcp:github-legacy": "mcp-server-github",
+    "mcp:github-remote": "PORT=${PORT:-7800} node node_modules/github-mcp-server/dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@modelcontextprotocol/server-github": "^2025.4.8",
+    "github-mcp-server": "^1.8.7"
+  }
+}
