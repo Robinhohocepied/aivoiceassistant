@@ -20,9 +20,10 @@ class WhatsAppClient:
         return f"{self.base_url}/{self.phone_id}/messages"
 
     async def send_text(self, to: str, body: str, dry_run: bool = False) -> Dict[str, Any]:
+        to_sanitized = "".join(ch for ch in to if ch.isdigit())
         payload = {
             "messaging_product": "whatsapp",
-            "to": to,
+            "to": to_sanitized,
             "type": "text",
             "text": {"body": body},
         }
@@ -58,4 +59,3 @@ def from_settings(settings: Settings) -> Optional[WhatsAppClient]:
         phone_id=settings.whatsapp_phone_id,
         base_url=settings.whatsapp_base_url,
     )
-

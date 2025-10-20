@@ -1,4 +1,4 @@
-.PHONY: help venv ensure-env install run test lint docker-build docker-run start tunnel tunnel-url qa-verify qa-inbound agent-test
+.PHONY: help venv ensure-env install run test lint docker-build docker-run start tunnel tunnel-url qa-verify qa-inbound agent-test qa-send
 
 # Configurable vars
 PYTHON ?= python3
@@ -21,6 +21,7 @@ help:
 	@echo "  make qa-verify    Verify WhatsApp webhook via tunnel (needs WHATSAPP_VERIFY_TOKEN)"
 	@echo "  make qa-inbound   Send sample inbound message via tunnel"
 	@echo "  make agent-test   Quick OpenAI connectivity test"
+	@echo "  make qa-send      Send a direct WhatsApp text via Graph API"
 	@echo "\nOverrides: make PYTHON=python3.11 start"
 
 venv:
@@ -92,5 +93,19 @@ qa-inbound:
 	echo "Posting sample inbound to $$TUNNEL/webhooks/whatsapp"; \
 	curl -s -X POST "$$TUNNEL/webhooks/whatsapp" -H 'Content-Type: application/json' -d '{"entry":[{"changes":[{"value":{"metadata":{"phone_number_id":"PHONE_ID"},"contacts":[{"profile":{"name":"Alice"},"wa_id":"+32471123456"}],"messages":[{"from":"+32471123456","id":"wamid.ABC","timestamp":"1690000000","type":"text","text":{"body":"Bonjour"}}]}}]}]}' | cat
 
+# Start Codex CLI with project .env loaded so MCP env is available
+codex:
+	@set -a; [ -f .env ] && . ./.env; set +a; codex
+
 agent-test: install
 	$(VENV_PY) -m agents.sanity_check
+
+qa-send:
+	@WHATSAPP_TOKEN=$${WHATSAPP_TOKEN:?Set WHATSAPP_TOKEN}; \
+	WHATSAPP_PHONE_ID=$${WHATSAPP_PHONE_ID:?Set WHATSAPP_PHONE_ID}; \
+	TO=$${TO:?Set recipient TO=E164digits}; \
+	echo "Sending to $$TO via phone_id=$$WHATSAPP_PHONE_ID"; \
+	curl -s -i -X POST "https://graph.facebook.com/v18.0/$$WHATSAPP_PHONE_ID/messages" \
+		-H "Authorization: Bearer $$WHATSAPP_TOKEN" \
+		-H "Content-Type: application/json" \
+		-d '{"messaging_product":"whatsapp","to":"'"$$TO"'","type":"text","text":{"body":"Test from Mediflow (qa-send)"}}' | cat

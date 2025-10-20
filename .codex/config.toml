@@ -1,0 +1,17 @@
+# Codex CLI MCP configuration (TOML)
+# Define each server with an [mcp_servers.<name>] table.
+
+[mcp_servers.github]
+url = "https://api.githubcopilot.com/mcp/"
+bearer_token = "${env:GITHUB_MCP_PAT}"
+
+# Fallback prompt-based server if env var is not set
+[mcp_servers.github_prompt]
+url = "https://api.githubcopilot.com/mcp/"
+bearer_token = "${input:github_mcp_pat}"
+
+[[inputs]]
+type = "promptString"
+id = "github_mcp_pat"
+description = "GitHub Personal Access Token"
+password = true

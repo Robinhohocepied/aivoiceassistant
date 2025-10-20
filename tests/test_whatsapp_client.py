@@ -26,6 +26,6 @@ def test_from_settings_with_env_and_dry_run(monkeypatch):
     out = asyncio.run(client.send_text(to="+10000000000", body="Hello", dry_run=True))
     assert out.get("dry_run") is True
     payload = out.get("payload")
-    assert payload["to"] == "+10000000000"
+    assert payload["to"] == "10000000000"
     assert payload["type"] == "text"
     assert payload["text"]["body"] == "Hello"

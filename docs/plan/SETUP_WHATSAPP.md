@@ -23,6 +23,15 @@ Outbound send wrapper
 - `connectors/whatsapp/client.py` exposes `WhatsAppClient.send_text(to, body)` with simple retries.
 - If env is not configured, `from_settings(settings)` returns `None`.
 
+Outbound quick test (Graph API)
+- Direct send to verify token/phone pairing:
+```
+make qa-send TO=15551234567
+```
+- Requires: `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` in your env or `.env`.
+- If you get 401 Unauthorized: token expired/wrong app or not authorized for this phone ID.
+- If you get 400 invalid parameter: use digits-only recipient, ensure your number is added as Tester in Dev mode.
+
 Notes
 - Use HTTPS and a public callback URL in Meta App → Webhooks.
 - For sandbox testing, configure your phone number and verify delivery.

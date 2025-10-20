@@ -26,6 +26,8 @@ class Settings:
     openai_base_url: Optional[str] = None
     openai_org_id: Optional[str] = None
     openai_project: Optional[str] = None
+    agent_auto_reply: bool = False
+    agent_dry_run: bool = True
 
     # WhatsApp (Cloud API)
     whatsapp_token: Optional[str] = None
@@ -83,6 +85,8 @@ def load_settings() -> Settings:
         openai_base_url=getenv("OPENAI_BASE_URL"),
         openai_org_id=getenv("OPENAI_ORG_ID"),
         openai_project=getenv("OPENAI_PROJECT"),
+        agent_auto_reply=getenv_bool("AGENT_AUTO_REPLY", False),
+        agent_dry_run=getenv_bool("AGENT_DRY_RUN", True),
         whatsapp_token=getenv("WHATSAPP_TOKEN"),
         whatsapp_verify_token=getenv("WHATSAPP_VERIFY_TOKEN"),
         whatsapp_phone_id=getenv("WHATSAPP_PHONE_ID"),

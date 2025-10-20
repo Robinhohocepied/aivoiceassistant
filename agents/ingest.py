@@ -46,18 +46,48 @@ async def handle_inbound_message(msg: NormalizedMessage, settings: Settings) -> 
     messages = build_messages(msg.text, state)
 
     # Call the model
-    try:
-        resp = client.responses.create(
-            model=settings.agent_model,
-            input=messages,
-            temperature=0.2,
-            max_output_tokens=200,
-            response_format={"type": "json_object"},
-            metadata={"source": "whatsapp", "from": msg.from_waid},
-        )
-        text_out: str = getattr(resp, "output_text", None) or str(resp)
-    except Exception as exc:  # noqa: BLE001
-        logger.exception("agent model call failed: %s", exc)
+    # Robust parameter fallback loop for model/SDK differences
+    use_response_format = True
+    use_temperature = True
+    use_max_tokens = True
+    text_out: Optional[str] = None
+    for _ in range(4):
+        try:
+            kwargs: Dict[str, Any] = {
+                "model": settings.agent_model,
+                "input": messages,
+                "metadata": {"source": "whatsapp", "from": msg.from_waid},
+            }
+            if use_response_format:
+                kwargs["response_format"] = {"type": "json_object"}
+            if use_temperature:
+                kwargs["temperature"] = 0.2
+            if use_max_tokens:
+                kwargs["max_output_tokens"] = 200
+            resp = client.responses.create(**kwargs)
+            text_out = getattr(resp, "output_text", None) or str(resp)
+            break
+        except TypeError as te:
+            # Older SDKs: drop response_format
+            if "response_format" in str(te) and use_response_format:
+                use_response_format = False
+                logger.info("agent_call_retry", extra={"reason": "no_response_format"})
+                continue
+            logger.exception("agent model call failed: %s", te)
+            return
+        except Exception as exc:  # noqa: BLE001
+            msg_exc = str(exc)
+            if "Unsupported parameter" in msg_exc and "temperature" in msg_exc and use_temperature:
+                use_temperature = False
+                logger.info("agent_call_retry", extra={"reason": "no_temperature"})
+                continue
+            if "Unsupported parameter" in msg_exc and "max_output_tokens" in msg_exc and use_max_tokens:
+                use_max_tokens = False
+                logger.info("agent_call_retry", extra={"reason": "no_max_tokens"})
+                continue
+            logger.exception("agent model call failed: %s", exc)
+            return
+    if text_out is None:
         return
 
     # Parse and merge extraction
