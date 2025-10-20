@@ -10,10 +10,10 @@ help:
 	@echo "  make docker-run   Run Docker container on :8080"
 
 install:
-	pip install -r requirements.txt
+	python3 -m pip install -r requirements.txt
 
 run:
-	uvicorn app.main:app --reload --port 8080
+	python3 -m uvicorn app.main:app --reload --port 8080
 
 test:
 	pytest -q
@@ -26,4 +26,3 @@ docker-build:
 
 docker-run:
 	docker run --rm -p 8080:8080 --env-file .env mediflow:latest
-
