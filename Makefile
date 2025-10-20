@@ -1,4 +1,4 @@
-.PHONY: help venv ensure-env install run test lint docker-build docker-run start
+.PHONY: help venv ensure-env install run test lint docker-build docker-run start tunnel tunnel-url qa-verify qa-inbound
 
 # Configurable vars
 PYTHON ?= python3
@@ -16,6 +16,10 @@ help:
 	@echo "  make lint         Run ruff lint (if installed)"
 	@echo "  make docker-build Build Docker image"
 	@echo "  make docker-run   Run Docker container on :8080"
+	@echo "  make tunnel       Start ngrok tunnel to :$(PORT) (requires ngrok)"
+	@echo "  make tunnel-url   Print active ngrok https URL"
+	@echo "  make qa-verify    Verify WhatsApp webhook via tunnel (needs WHATSAPP_VERIFY_TOKEN)"
+	@echo "  make qa-inbound   Send sample inbound message via tunnel"
 	@echo "\nOverrides: make PYTHON=python3.11 start"
 
 venv:
@@ -50,3 +54,39 @@ docker-run:
 start: ensure-env install
 	@echo "Starting API on :$(PORT)"
 	$(VENV_PY) -m uvicorn app.main:app --host 0.0.0.0 --port $(PORT) --reload
+
+# --- Local tunneling & QA helpers ---
+tunnel:
+	@command -v ngrok >/dev/null 2>&1 || { echo "ngrok not installed. Install with: brew install ngrok && ngrok config add-authtoken <TOKEN>"; exit 1; }
+	@echo "Starting ngrok tunnel to http://localhost:$(PORT) ..."
+	ngrok http $(PORT)
+
+tunnel-url:
+	@$(PYTHON) - <<'PY'
+import json, sys
+from urllib.request import urlopen
+try:
+    data = json.load(urlopen('http://127.0.0.1:4040/api/tunnels'))
+    urls = [t['public_url'] for t in data.get('tunnels', []) if t.get('public_url','').startswith('https://')]
+    if urls:
+        print(urls[0])
+    else:
+        sys.exit(1)
+except Exception:
+    sys.exit(1)
+PY
+
+qa-verify:
+	@WHATSAPP_VERIFY_TOKEN=$${WHATSAPP_VERIFY_TOKEN:?Set WHATSAPP_VERIFY_TOKEN in env or .env}; \
+	TUNNEL="${TUNNEL}"; \
+	if [ -z "$$TUNNEL" ]; then TUNNEL="$$( $(MAKE) -s tunnel-url 2>/dev/null || true )"; fi; \
+	[ -n "$$TUNNEL" ] || { echo "No tunnel URL found. Start ngrok (make tunnel) or set TUNNEL=https://<domain>"; exit 1; }; \
+	echo "Verifying webhook at $$TUNNEL/webhooks/whatsapp"; \
+	curl -i "$$TUNNEL/webhooks/whatsapp?hub.mode=subscribe&hub.verify_token=$$WHATSAPP_VERIFY_TOKEN&hub.challenge=12345"
+
+qa-inbound:
+	@TUNNEL="${TUNNEL}"; \
+	if [ -z "$$TUNNEL" ]; then TUNNEL="$$( $(MAKE) -s tunnel-url 2>/dev/null || true )"; fi; \
+	[ -n "$$TUNNEL" ] || { echo "No tunnel URL found. Start ngrok (make tunnel) or set TUNNEL=https://<domain>"; exit 1; }; \
+	echo "Posting sample inbound to $$TUNNEL/webhooks/whatsapp"; \
+	curl -s -X POST "$$TUNNEL/webhooks/whatsapp" -H 'Content-Type: application/json' -d '{"entry":[{"changes":[{"value":{"metadata":{"phone_number_id":"PHONE_ID"},"contacts":[{"profile":{"name":"Alice"},"wa_id":"+32471123456"}],"messages":[{"from":"+32471123456","id":"wamid.ABC","timestamp":"1690000000","type":"text","text":{"body":"Bonjour"}}]}}]}]}' | cat
