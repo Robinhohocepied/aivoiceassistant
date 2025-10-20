@@ -13,6 +13,7 @@ from agents.conversation import (
 )
 from connectors.whatsapp.client import from_settings as whatsapp_from_settings
 from agents.schemas import Extraction
+from agents.datetime_fr import parse_preferred_time_fr
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,13 @@ async def handle_inbound_message(msg: NormalizedMessage, settings: Settings) -> 
     except Exception:
         extracted = extracted_dict
     state = merge_extracted(state, extracted)
+    # Normalize preferred_time if present
+    if state.preferred_time and not state.preferred_time_iso:
+        try:
+            parsed = parse_preferred_time_fr(state.preferred_time)
+            state.preferred_time_iso = parsed.iso
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("preferred_time_parse_failed", extra={"error": str(exc)})
     session_store.put(state)
 
     # Compose follow-up/confirmation

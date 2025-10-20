@@ -74,7 +74,9 @@ def compose_followup(state: SessionState) -> str:
             "Merci. J’ai noté:\n"
             f"- Nom: {state.name}\n"
             f"- Raison: {state.reason}\n"
-            f"- Préférence: {state.preferred_time}\n"
+            f"- Préférence: {state.preferred_time}"
+            + (f" (≈ {state.preferred_time_iso})" if getattr(state, "preferred_time_iso", None) else "")
+            + "\n"
             "Je regarde les disponibilités et je reviens vers vous."
         )
     # Ask for the next missing field
