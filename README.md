@@ -36,3 +36,4 @@ WhatsApp (Phase 2)
 - Setup guides:
   - WhatsApp: `docs/plan/SETUP_WHATSAPP.md`
   - Local ngrok (webhooks over HTTPS): `docs/plan/SETUP_NGROK.md`
+ - Debug (dev only): `GET /webhooks/whatsapp/_debug/messages` lists recently received messages.

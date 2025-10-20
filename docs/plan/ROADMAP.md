@@ -4,9 +4,9 @@ This roadmap outlines the phase-by-phase plan and links to detailed trackers for
 
 Status Legend: [ ] Not started · [~] In progress · [x] Done
 
-- [~] Phase 1 — Foundations & Repo Setup (`docs/plan/phases/phase-01-foundations.md`)
+- [x] Phase 1 — Foundations & Repo Setup (`docs/plan/phases/phase-01-foundations.md`)
   - Goals: repo structure, envs, health endpoint, logging baseline.
-- [ ] Phase 2 — WhatsApp Messaging Integration (`docs/plan/phases/phase-02-whatsapp-integration.md`)
+- [~] Phase 2 — WhatsApp Messaging Integration (`docs/plan/phases/phase-02-whatsapp-integration.md`)
   - Goals: webhook verify/receive, reply flow, send wrapper, traceability.
 - [ ] Phase 3 — French Conversation Flow & NLU (`docs/plan/phases/phase-03-conversation-nlu.md`)
   - Goals: capture name/reason/time; French prompts/guardrails; session state.
@@ -33,4 +33,3 @@ References
 - FRD: `docs/ai_appointment_booking_assistant_functional_requirements_markdown.md`
 - Decisions: `docs/plan/DECISIONS.md`
 - Risks: `docs/plan/RISKS.md`
-

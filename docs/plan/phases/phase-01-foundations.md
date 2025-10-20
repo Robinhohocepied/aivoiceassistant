@@ -1,6 +1,6 @@
 # Phase 1 — Foundations & Repo Setup
 
-Status: [~] In Progress · Owner: TBC · Target: TBC
+Status: [x] Done · Owner: TBC · Target: TBC
 
 Goals
 - Establish repo structure, environment configuration, and baseline logging.
@@ -30,7 +30,7 @@ Deliverables
 Acceptance Criteria
 - Service starts locally without errors
 - Health route returns 200 in < 100ms
-- Lint/test jobs pass in CI
+- Local lint/test pass; CI pipeline planned for Phase 11
 
 Metrics
 - Build success rate; boot time; health route latency
