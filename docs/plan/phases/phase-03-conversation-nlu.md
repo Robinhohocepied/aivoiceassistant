@@ -1,6 +1,6 @@
 # Phase 3 — French Conversation Flow & NLU
 
-Status: [ ] Not Started · Owner: TBC · Target: TBC
+Status: [~] In Progress · Owner: TBC · Target: TBC
 
 Goals
 - Capture name, reason, and preferred time in French with guardrails.
@@ -10,8 +10,8 @@ Scope In
 - Session state; prompts; extraction of required fields; follow-up prompts.
 
 Tasks
+- [x] Initialize OpenAI client and local connectivity test (`make agent-test`)
 - [ ] Define tone and French prompts for greeting, follow-ups, and closure
-- [ ] Initialize OpenAI Agents SDK client and project configuration
 - [ ] Implement session state keyed by phone number
 - [ ] Define Agent tools for: field extraction, date parsing (FR), and validation
 - [ ] Extract fields (name, reason, preferred time) from free text via Agent
@@ -33,3 +33,4 @@ Dependencies
 
 Links
 - FRD 5.2 Conversation Flow, 5.9 Internationalization
+ - OpenAI setup: `docs/plan/SETUP_OPENAI.md`

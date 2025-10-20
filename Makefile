@@ -1,4 +1,4 @@
-.PHONY: help venv ensure-env install run test lint docker-build docker-run start tunnel tunnel-url qa-verify qa-inbound
+.PHONY: help venv ensure-env install run test lint docker-build docker-run start tunnel tunnel-url qa-verify qa-inbound agent-test
 
 # Configurable vars
 PYTHON ?= python3
@@ -20,6 +20,7 @@ help:
 	@echo "  make tunnel-url   Print active ngrok https URL"
 	@echo "  make qa-verify    Verify WhatsApp webhook via tunnel (needs WHATSAPP_VERIFY_TOKEN)"
 	@echo "  make qa-inbound   Send sample inbound message via tunnel"
+	@echo "  make agent-test   Quick OpenAI connectivity test"
 	@echo "\nOverrides: make PYTHON=python3.11 start"
 
 venv:
@@ -62,19 +63,19 @@ tunnel:
 	ngrok http $(PORT)
 
 tunnel-url:
-	@$(PYTHON) - <<'PY'
-import json, sys
-from urllib.request import urlopen
-try:
-    data = json.load(urlopen('http://127.0.0.1:4040/api/tunnels'))
-    urls = [t['public_url'] for t in data.get('tunnels', []) if t.get('public_url','').startswith('https://')]
-    if urls:
-        print(urls[0])
-    else:
-        sys.exit(1)
-except Exception:
-    sys.exit(1)
-PY
+	@$(PYTHON) - <<-'PY'
+	import json, sys
+	from urllib.request import urlopen
+	try:
+	    data = json.load(urlopen('http://127.0.0.1:4040/api/tunnels'))
+	    urls = [t['public_url'] for t in data.get('tunnels', []) if t.get('public_url','').startswith('https://')]
+	    if urls:
+	        print(urls[0])
+	    else:
+	        sys.exit(1)
+	except Exception:
+	    sys.exit(1)
+	PY
 
 qa-verify:
 	@WHATSAPP_VERIFY_TOKEN=$${WHATSAPP_VERIFY_TOKEN:?Set WHATSAPP_VERIFY_TOKEN in env or .env}; \
@@ -90,3 +91,6 @@ qa-inbound:
 	[ -n "$$TUNNEL" ] || { echo "No tunnel URL found. Start ngrok (make tunnel) or set TUNNEL=https://<domain>"; exit 1; }; \
 	echo "Posting sample inbound to $$TUNNEL/webhooks/whatsapp"; \
 	curl -s -X POST "$$TUNNEL/webhooks/whatsapp" -H 'Content-Type: application/json' -d '{"entry":[{"changes":[{"value":{"metadata":{"phone_number_id":"PHONE_ID"},"contacts":[{"profile":{"name":"Alice"},"wa_id":"+32471123456"}],"messages":[{"from":"+32471123456","id":"wamid.ABC","timestamp":"1690000000","type":"text","text":{"body":"Bonjour"}}]}}]}]}' | cat
+
+agent-test: install
+	$(VENV_PY) -m agents.sanity_check
