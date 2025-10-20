@@ -1,4 +1,5 @@
 import logging
+from dataclasses import asdict
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -37,6 +38,16 @@ def get_router(settings: Optional[Settings] = None) -> APIRouter:
         normalized = normalize_inbound(payload)
         for msg in normalized:
             store.save(msg)
+            # Log inbound message details (extras are included by JsonFormatter)
+            logger.info(
+                "whatsapp_inbound",
+                extra={
+                    "message_id": msg.message_id,
+                    "from": msg.from_waid,
+                    "type": msg.type,
+                    "text": msg.text,
+                },
+            )
             try:
                 # Integration hook for Phase 3: route to Agents SDK (stub)
                 from agents.ingest import handle_inbound_message  # local import to avoid cycle
@@ -45,6 +56,25 @@ def get_router(settings: Optional[Settings] = None) -> APIRouter:
             except Exception as exc:  # noqa: BLE001
                 logger.exception("agent ingestion failed: %s", exc)
         return PlainTextResponse("EVENT_RECEIVED")
+
+    # Dev-only debug endpoint to view received messages
+    if (s.app_env or "dev").lower() != "prod":
+        @router.get("/_debug/messages")
+        async def debug_messages():  # type: ignore
+            items = []
+            for m in store.all():
+                items.append(
+                    {
+                        "message_id": m.message_id,
+                        "timestamp": m.timestamp,
+                        "from": m.from_waid,
+                        "to_phone_id": m.to_phone_id,
+                        "type": m.type,
+                        "text": m.text,
+                        "contact_name": m.contact_name,
+                    }
+                )
+            return items
 
     return router
 

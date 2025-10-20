@@ -52,6 +52,35 @@ class JsonFormatter(logging.Formatter):
         request_id = getattr(record, "request_id", None)
         if request_id:
             payload["request_id"] = request_id
+        # Include structured extras added via logger.*(..., extra={...})
+        builtin = {
+            "name",
+            "msg",
+            "args",
+            "levelname",
+            "levelno",
+            "pathname",
+            "filename",
+            "module",
+            "exc_info",
+            "exc_text",
+            "stack_info",
+            "lineno",
+            "funcName",
+            "created",
+            "msecs",
+            "relativeCreated",
+            "thread",
+            "threadName",
+            "processName",
+            "process",
+            "message",
+            "request_id",
+        }
+        for key, value in record.__dict__.items():
+            if key in builtin or key.startswith("_"):
+                continue
+            payload[key] = mask_pii(value) if self.redact else value
         if record.exc_info:
             payload["exc_info"] = self.formatException(record.exc_info)
         return json.dumps(payload, ensure_ascii=False)
@@ -85,4 +114,3 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
             return response
         finally:
             _request_id_ctx.reset(token)
-
