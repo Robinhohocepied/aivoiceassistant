@@ -23,16 +23,25 @@ OPENAI_PROJECT=            # project context (optional)
 - Run: `make agent-test`
 - Expected: prints a short model response in your terminal
 
-## 4) Choosing a model
+## 4) Enable auto-replies (optional)
+- In `.env`:
+```
+AGENT_AUTO_REPLY=true
+AGENT_DRY_RUN=true   # change to false to send real WhatsApp messages
+```
+- Requires WhatsApp credentials (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`).
+- When enabled, the agent will extract fields and send a French follow-up/confirmation.
+
+## 5) Choosing a model
 - `gpt-4.1`: good general reasoning; use for higher quality
 - `gpt-4o-mini`: cost/perf optimized; good default for early prototyping
 - You can change the model anytime via `AGENT_MODEL`
 
-## 5) Where the client is created
+## 6) Where the client is created
 - Code: `agents/client.py` → `create_agents_client(settings)`
 - Uses environment from `app/config.py` and avoids network calls until used
 
-## 6) Troubleshooting
+## 7) Troubleshooting
 - `agents_configured` is false: missing/invalid `OPENAI_API_KEY`
 - Network errors: check firewall/VPN; if needed, set `OPENAI_BASE_URL` to your proxy
 - Rate limits: reduce test frequency; prefer `gpt-4o-mini` for iteration
@@ -42,4 +51,3 @@ Next steps
 - Implement session state keyed by phone number
 - Add prompts/guardrails in French to extract name, reason, preferred time
 - Wire agent calls into `agents/ingest.py` and optionally auto-reply via WhatsApp client
-

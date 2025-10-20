@@ -35,5 +35,11 @@ WhatsApp (Phase 2)
 - Outbound: use `connectors/whatsapp/client.py` (`WhatsAppClient.send_text`).
 - Setup guides:
   - WhatsApp: `docs/plan/SETUP_WHATSAPP.md`
-  - Local ngrok (webhooks over HTTPS): `docs/plan/SETUP_NGROK.md`
+ - Local ngrok (webhooks over HTTPS): `docs/plan/SETUP_NGROK.md`
  - Debug (dev only): `GET /webhooks/whatsapp/_debug/messages` lists recently received messages.
+
+Agents (Phase 3)
+- OpenAI setup: `docs/plan/SETUP_OPENAI.md`
+- Env toggles:
+  - `AGENT_AUTO_REPLY=true` to send automatic French follow-ups via WhatsApp
+  - `AGENT_DRY_RUN=true` to log instead of sending (default)

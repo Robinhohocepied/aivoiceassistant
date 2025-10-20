@@ -76,3 +76,40 @@ def test_whatsapp_inbound_text_message(monkeypatch):
     assert m.text == "Bonjour"
     assert m.contact_name == "Alice"
 
+
+def test_whatsapp_debug_messages_endpoint(monkeypatch):
+    store.clear()
+    app = create_app()
+    client = TestClient(app)
+    payload = {
+        "entry": [
+            {
+                "changes": [
+                    {
+                        "value": {
+                            "metadata": {"phone_number_id": "PHONE_ID"},
+                            "contacts": [
+                                {"profile": {"name": "Bob"}, "wa_id": "+32470000000"}
+                            ],
+                            "messages": [
+                                {
+                                    "from": "+32470000000",
+                                    "id": "wamid.DEF",
+                                    "timestamp": "1690000000",
+                                    "type": "text",
+                                    "text": {"body": "Salut"},
+                                }
+                            ],
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+    r1 = client.post("/webhooks/whatsapp", json=payload)
+    assert r1.status_code == 200
+    r2 = client.get("/webhooks/whatsapp/_debug/messages")
+    assert r2.status_code == 200
+    data = r2.json()
+    assert isinstance(data, list) and len(data) >= 1
+    assert data[0]["from"] == "+32470000000"

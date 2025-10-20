@@ -11,12 +11,12 @@ Scope In
 
 Tasks
 - [x] Initialize OpenAI client and local connectivity test (`make agent-test`)
+- [x] Implement session state keyed by phone number
+- [x] Extract fields (name, reason, preferred time) to JSON (structured outputs)
+- [x] Normalize preferred_time → ISO (baseline FR parser)
 - [ ] Define tone and French prompts for greeting, follow-ups, and closure
-- [ ] Implement session state keyed by phone number
-- [ ] Define Agent tools for: field extraction, date parsing (FR), and validation
-- [ ] Extract fields (name, reason, preferred time) from free text via Agent
-- [ ] Validate presence; ask targeted follow-ups if missing
-- [ ] Unit tests covering happy paths and edge cases
+- [ ] Validate presence; ask targeted follow-ups if missing (expand variants)
+- [ ] Unit tests for edge cases and ambiguous time expressions
 
 Deliverables
 - Conversation module with tests and clear prompts/guardrails

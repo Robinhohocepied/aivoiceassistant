@@ -16,10 +16,12 @@ WhatsApp Integration
 - [x] Sandbox setup and documentation
 
 Conversation & NLU (French)
-- [ ] Session state by phone number
-- [ ] Extract name, reason, preferred time
-- [ ] Prompting + guardrails in French
-- [ ] Tests for happy/edge paths
+- [x] Initialize OpenAI client and connectivity test
+- [x] Session state by phone number
+- [x] Structured extraction to JSON (name, reason, preferred_time)
+- [x] FR datetime normalization baseline (preferred_time_iso)
+- [ ] Prompting + guardrails in French (tone, safety)
+- [ ] Tests for edge cases and ambiguous time expressions
 
 Calendar & Scheduling
 - [ ] Google Calendar auth and connectivity

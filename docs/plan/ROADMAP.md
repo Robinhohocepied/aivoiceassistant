@@ -8,7 +8,7 @@ Status Legend: [ ] Not started · [~] In progress · [x] Done
   - Goals: repo structure, envs, health endpoint, logging baseline.
 - [~] Phase 2 — WhatsApp Messaging Integration (`docs/plan/phases/phase-02-whatsapp-integration.md`)
   - Goals: webhook verify/receive, reply flow, send wrapper, traceability.
-- [ ] Phase 3 — French Conversation Flow & NLU (`docs/plan/phases/phase-03-conversation-nlu.md`)
+- [~] Phase 3 — French Conversation Flow & NLU (`docs/plan/phases/phase-03-conversation-nlu.md`)
   - Goals: capture name/reason/time; French prompts/guardrails; session state.
 - [ ] Phase 4 — Calendar Integration & Scheduling (`docs/plan/phases/phase-04-calendar-scheduling.md`)
   - Goals: Google Calendar, availability lookup, FR date parsing, event creation.

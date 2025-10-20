@@ -10,6 +10,8 @@ Core
 OpenAI / Agents SDK
 - `OPENAI_API_KEY` — API key for model access
 - `AGENT_MODEL` — model name (e.g., `gpt-4.1`)
+ - `AGENT_AUTO_REPLY` — `true` to auto-reply via WhatsApp using agent output (default `false`)
+ - `AGENT_DRY_RUN` — `true` to avoid live sends when auto-replying (default `true`)
 
 WhatsApp (Cloud API)
 - `WHATSAPP_TOKEN` — access token
@@ -36,4 +38,3 @@ Notes
 - Do not commit real secrets.
 - For local dev, use a `.env` file loaded via a standard library (e.g., `python-dotenv`).
 - Production should use a secrets manager (e.g., cloud provider).
-
