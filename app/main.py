@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
@@ -12,26 +13,21 @@ def create_app() -> FastAPI:
     settings = load_settings()
     setup_logging(redact=settings.redact_logs)
 
-    app = FastAPI(title="Mediflow API", version=settings.app_version)
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):  # type: ignore
+        logging.getLogger(__name__).info("service starting")
+        try:
+            yield
+        finally:
+            logging.getLogger(__name__).info("service stopping")
+
+    app = FastAPI(title="Mediflow API", version=settings.app_version, lifespan=lifespan)
 
     # Middleware
     app.add_middleware(CorrelationIdMiddleware)
 
     # Routers
     app.include_router(get_whatsapp_router(settings))
-
-    # Startup/Shutdown hooks
-    @app.on_event("startup")
-    async def _on_startup() -> None:
-        logging.getLogger(__name__).info(
-            "service starting",
-        )
-
-    @app.on_event("shutdown")
-    async def _on_shutdown() -> None:
-        logging.getLogger(__name__).info(
-            "service stopping",
-        )
 
     # Health endpoint
     @app.get("/healthz")
