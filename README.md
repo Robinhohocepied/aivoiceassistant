@@ -35,3 +35,4 @@ WhatsApp (Phase 2)
   - Inbound (POST): accepts Cloud API JSON; messages normalized and stored in-memory; forwarded to Agents hook (stub).
 - Outbound: use `connectors/whatsapp/client.py` (`WhatsAppClient.send_text`).
 - Setup guide: `docs/plan/SETUP_WHATSAPP.md`
+
