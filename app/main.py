@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from app.config import load_settings
 from app.logging import CorrelationIdMiddleware, setup_logging
 from connectors.whatsapp import get_router as get_whatsapp_router
+from app.debug import get_router as get_debug_router
 
 
 def create_app() -> FastAPI:
@@ -19,6 +20,8 @@ def create_app() -> FastAPI:
 
     # Routers
     app.include_router(get_whatsapp_router(settings))
+    # Debug endpoints (hidden in prod by the router itself)
+    app.include_router(get_debug_router(settings))
 
     # Startup/Shutdown hooks
     @app.on_event("startup")

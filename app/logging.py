@@ -5,6 +5,7 @@ import time
 import uuid
 from contextvars import ContextVar
 from typing import Any, Dict, Optional
+import os
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -66,8 +67,11 @@ def setup_logging(redact: bool = True) -> None:
     root.handlers = [handler]
     root.setLevel(logging.INFO)
 
-    # Silence noisy loggers if needed
-    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    # Access logs: enable with ACCESS_LOGS=true (default WARN)
+    access_level = logging.WARNING
+    if (os.getenv("ACCESS_LOGS", "").lower() in {"1", "true", "yes", "on"}):
+        access_level = logging.INFO
+    logging.getLogger("uvicorn.access").setLevel(access_level)
 
 
 class CorrelationIdMiddleware(BaseHTTPMiddleware):
@@ -85,4 +89,3 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
             return response
         finally:
             _request_id_ctx.reset(token)
-

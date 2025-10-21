@@ -26,12 +26,15 @@ class Settings:
     openai_base_url: Optional[str] = None
     openai_org_id: Optional[str] = None
     openai_project: Optional[str] = None
+    agent_prompt: Optional[str] = None
 
     # WhatsApp (Cloud API)
     whatsapp_token: Optional[str] = None
     whatsapp_verify_token: Optional[str] = None
     whatsapp_phone_id: Optional[str] = None
     whatsapp_base_url: str = "https://graph.facebook.com/v18.0"
+    whatsapp_autoreply: bool = False
+    whatsapp_dry_run: bool = True
 
     # Google Calendar
     google_creds_json: Optional[str] = None
@@ -83,11 +86,14 @@ def load_settings() -> Settings:
         openai_base_url=getenv("OPENAI_BASE_URL"),
         openai_org_id=getenv("OPENAI_ORG_ID"),
         openai_project=getenv("OPENAI_PROJECT"),
+        agent_prompt=getenv("AGENT_PROMPT"),
         whatsapp_token=getenv("WHATSAPP_TOKEN"),
         whatsapp_verify_token=getenv("WHATSAPP_VERIFY_TOKEN"),
         whatsapp_phone_id=getenv("WHATSAPP_PHONE_ID"),
         whatsapp_base_url=getenv("WHATSAPP_BASE_URL", "https://graph.facebook.com/v18.0")
         or "https://graph.facebook.com/v18.0",
+        whatsapp_autoreply=getenv_bool("WHATSAPP_AUTOREPLY", False),
+        whatsapp_dry_run=getenv_bool("WHATSAPP_DRY_RUN", True),
         google_creds_json=getenv("GOOGLE_CREDS_JSON"),
         google_calendar_id=getenv("GOOGLE_CALENDAR_ID"),
         reminder_hours_before=getenv_int("REMINDER_HOURS_BEFORE", 24),

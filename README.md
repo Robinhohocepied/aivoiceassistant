@@ -35,3 +35,12 @@ WhatsApp (Phase 2)
   - Inbound (POST): accepts Cloud API JSON; messages normalized and stored in-memory; forwarded to Agents hook (stub).
 - Outbound: use `connectors/whatsapp/client.py` (`WhatsAppClient.send_text`).
 - Setup guide: `docs/plan/SETUP_WHATSAPP.md`
+
+OpenAI-powered auto-reply (prototype)
+- Enable via `.env`:
+  - `WHATSAPP_AUTOREPLY=true` (turn on auto-replies for inbound text)
+  - `WHATSAPP_DRY_RUN=true` (default; log and skip real send)
+  - `OPENAI_API_KEY=<your-key>` (required for AI replies)
+  - Optional: `AGENT_PROMPT="..."` and `AGENT_MODEL=gpt-4.1`
+- Flow: inbound text -> OpenAI (chat completions) -> reply -> WhatsApp send (if configured)
+- Notes: requires `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_ID` for actual sends. In dev, keep `WHATSAPP_DRY_RUN=true`.

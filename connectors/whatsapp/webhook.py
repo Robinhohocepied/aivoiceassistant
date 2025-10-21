@@ -20,19 +20,30 @@ def get_router(settings: Optional[Settings] = None) -> APIRouter:
     s = settings or load_settings()
     router = APIRouter(prefix="/webhooks/whatsapp", tags=["whatsapp"])
 
+    def _verify(hub_mode: Optional[str], hub_verify_token: Optional[str], hub_challenge: Optional[str]) -> PlainTextResponse:
+        if hub_mode == "subscribe" and hub_verify_token and hub_challenge:
+            if s.whatsapp_verify_token and hub_verify_token == s.whatsapp_verify_token:
+                return PlainTextResponse(hub_challenge)
+        raise HTTPException(status_code=403, detail="Forbidden")
+
     @router.get("")
     async def verify(
         hub_mode: Optional[str] = Query(None, alias="hub.mode"),
         hub_verify_token: Optional[str] = Query(None, alias="hub.verify_token"),
         hub_challenge: Optional[str] = Query(None, alias="hub.challenge"),
     ) -> PlainTextResponse:  # type: ignore
-        if hub_mode == "subscribe" and hub_verify_token and hub_challenge:
-            if s.whatsapp_verify_token and hub_verify_token == s.whatsapp_verify_token:
-                return PlainTextResponse(hub_challenge)
-        raise HTTPException(status_code=403, detail="Forbidden")
+        return _verify(hub_mode, hub_verify_token, hub_challenge)
 
-    @router.post("")
-    async def inbound(request: Request) -> PlainTextResponse:  # type: ignore
+    # Accept trailing slash variants too
+    @router.get("/")
+    async def verify_slash(
+        hub_mode: Optional[str] = Query(None, alias="hub.mode"),
+        hub_verify_token: Optional[str] = Query(None, alias="hub.verify_token"),
+        hub_challenge: Optional[str] = Query(None, alias="hub.challenge"),
+    ) -> PlainTextResponse:  # type: ignore
+        return _verify(hub_mode, hub_verify_token, hub_challenge)
+
+    async def _inbound(request: Request) -> PlainTextResponse:
         payload: Dict[str, Any] = await request.json()
         normalized = normalize_inbound(payload)
         for msg in normalized:
@@ -45,6 +56,14 @@ def get_router(settings: Optional[Settings] = None) -> APIRouter:
             except Exception as exc:  # noqa: BLE001
                 logger.exception("agent ingestion failed: %s", exc)
         return PlainTextResponse("EVENT_RECEIVED")
+
+    @router.post("")
+    async def inbound(request: Request) -> PlainTextResponse:  # type: ignore
+        return await _inbound(request)
+
+    @router.post("/")
+    async def inbound_slash(request: Request) -> PlainTextResponse:  # type: ignore
+        return await _inbound(request)
 
     return router
 
