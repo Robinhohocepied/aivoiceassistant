@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Dict, List, Optional, Tuple
 
 from agents.session import SessionState
@@ -88,7 +89,31 @@ def compose_followup(state: SessionState) -> str:
     return "Merci. Quelle est votre préférence de date/heure ? (ex.: mardi prochain matin)"
 
 
+def _strip_code_fences(s: str) -> str:
+    t = s.strip()
+    if t.startswith("```"):
+        # Remove ```[lang]? ... ```
+        t = re.sub(r"^```[a-zA-Z0-9]*\n?", "", t)
+        t = re.sub(r"\n?```$", "", t)
+    return t.strip()
+
+
+def _extract_json_object(s: str) -> Optional[str]:
+    # Find the first balanced-looking JSON object by slicing from first "{" to last "}"
+    if "{" in s and "}" in s:
+        start = s.find("{")
+        end = s.rfind("}")
+        if end > start:
+            return s[start : end + 1]
+    # Fallback: try a regex for a JSON object
+    m = re.search(r"\{[\s\S]*\}", s)
+    if m:
+        return m.group(0)
+    return None
+
+
 def try_parse_json(text: str) -> Optional[Dict[str, Optional[str]]]:
+    # 1) Try raw JSON
     try:
         data = json.loads(text)
         if isinstance(data, dict):
@@ -98,7 +123,35 @@ def try_parse_json(text: str) -> Optional[Dict[str, Optional[str]]]:
                 "preferred_time": _clean(data.get("preferred_time")),
             }
     except Exception:
-        return None
+        pass
+
+    # 2) Strip code fences and try again
+    t2 = _strip_code_fences(text)
+    if t2 != text:
+        try:
+            data = json.loads(t2)
+            if isinstance(data, dict):
+                return {
+                    "name": _clean(data.get("name")),
+                    "reason": _clean(data.get("reason")),
+                    "preferred_time": _clean(data.get("preferred_time")),
+                }
+        except Exception:
+            pass
+
+    # 3) Extract JSON substring if present and parse
+    t3 = _extract_json_object(text)
+    if t3:
+        try:
+            data = json.loads(t3)
+            if isinstance(data, dict):
+                return {
+                    "name": _clean(data.get("name")),
+                    "reason": _clean(data.get("reason")),
+                    "preferred_time": _clean(data.get("preferred_time")),
+                }
+        except Exception:
+            return None
     return None
 
 

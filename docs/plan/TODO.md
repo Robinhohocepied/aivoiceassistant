@@ -25,16 +25,17 @@ Conversation & NLU (French)
 
 Calendar & Scheduling
 - [ ] Google Calendar auth and connectivity
-- [ ] Availability lookup for clinic calendar
-- [ ] FR datetime parsing; timezone conversion (Europe/Brussels)
-- [ ] Offer up to 2 alternatives when unavailable
-- [ ] Create events with clinic + patient details
+- [x] Availability lookup for clinic calendar (dev in-memory provider)
+- [x] FR datetime parsing; timezone conversion (Europe/Brussels)
+- [x] Offer up to 2 alternatives when unavailable (dev in-memory provider)
+- [x] Create events with clinic + patient details (dev in-memory provider)
+- [x] Handle user selection of alternatives via numeric reply (1/2)
 
 Confirmations & Reminders
-- [ ] Booking summary via WhatsApp
+- [x] Booking summary via WhatsApp (post-booking message)
 - [ ] ICS fallback when email missing
 - [ ] Reminder scheduler at T-24h
-- [ ] FR locale formatting
+- [x] FR locale formatting (basic humanized date)
 
 Rescheduling & Cancellation
 - [ ] Detect “modifier” and “annuler”

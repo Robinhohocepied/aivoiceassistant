@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 
 @dataclass
@@ -9,6 +9,10 @@ class SessionState:
     reason: Optional[str] = None
     preferred_time: Optional[str] = None
     preferred_time_iso: Optional[str] = None
+    event_id: Optional[str] = None
+    pending_alternatives: Optional[List[str]] = None
+    pending_duration_min: Optional[int] = None
+    event_id: Optional[str] = None
 
 
 class InMemorySessionStore:

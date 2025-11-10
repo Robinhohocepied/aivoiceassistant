@@ -91,3 +91,25 @@ def parse_preferred_time_fr(
         dt = dt.replace(tzinfo=tzinfo)
     return ParsedTime(iso=dt.isoformat(), note=None)
 
+
+def format_fr_human(iso: str) -> str:
+    """Very small FR human-friendly formatter for ISO datetime strings.
+
+    Example: 2025-01-14T10:30:00+01:00 -> "mardi 14/01/2025 à 10:30"
+    """
+    try:
+        dt = datetime.fromisoformat(iso)
+    except Exception:
+        return iso
+    # Weekday names in FR (lowercase)
+    wd = [
+        "lundi",
+        "mardi",
+        "mercredi",
+        "jeudi",
+        "vendredi",
+        "samedi",
+        "dimanche",
+    ][dt.weekday()]
+    return f"{wd} {dt.day:02d}/{dt.month:02d}/{dt.year} à {dt.hour:02d}:{dt.minute:02d}"
+

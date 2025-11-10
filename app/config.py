@@ -37,6 +37,7 @@ class Settings:
 
     # Google Calendar
     google_creds_json: Optional[str] = None
+    google_creds_json_b64: Optional[str] = None
     google_calendar_id: Optional[str] = None
 
     # Scheduling / Jobs
@@ -93,6 +94,7 @@ def load_settings() -> Settings:
         whatsapp_base_url=getenv("WHATSAPP_BASE_URL", "https://graph.facebook.com/v18.0")
         or "https://graph.facebook.com/v18.0",
         google_creds_json=getenv("GOOGLE_CREDS_JSON"),
+        google_creds_json_b64=getenv("GOOGLE_CREDS_JSON_B64"),
         google_calendar_id=getenv("GOOGLE_CALENDAR_ID"),
         reminder_hours_before=getenv_int("REMINDER_HOURS_BEFORE", 24),
         redact_logs=getenv_bool("REDACT_LOGS", True),

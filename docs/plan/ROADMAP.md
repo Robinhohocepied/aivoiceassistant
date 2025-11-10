@@ -10,7 +10,7 @@ Status Legend: [ ] Not started · [~] In progress · [x] Done
   - Goals: webhook verify/receive, reply flow, send wrapper, traceability.
 - [~] Phase 3 — French Conversation Flow & NLU (`docs/plan/phases/phase-03-conversation-nlu.md`)
   - Goals: capture name/reason/time; French prompts/guardrails; session state.
-- [ ] Phase 4 — Calendar Integration & Scheduling (`docs/plan/phases/phase-04-calendar-scheduling.md`)
+- [~] Phase 4 — Calendar Integration & Scheduling (`docs/plan/phases/phase-04-calendar-scheduling.md`)
   - Goals: Google Calendar, availability lookup, FR date parsing, event creation.
 - [ ] Phase 5 — Confirmations & Reminders (`docs/plan/phases/phase-05-confirmations-reminders.md`)
   - Goals: booking summary, ICS fallback, T-24h reminder, FR localization.

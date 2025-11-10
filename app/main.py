@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from app.config import load_settings
 from app.logging import CorrelationIdMiddleware, setup_logging
 from connectors.whatsapp import get_router as get_whatsapp_router
+from connectors.calendar.provider import get_calendar_provider
 
 
 def create_app() -> FastAPI:
@@ -28,6 +29,19 @@ def create_app() -> FastAPI:
 
     # Routers
     app.include_router(get_whatsapp_router(settings))
+
+    # Debug: show active calendar provider (dev only)
+    if (settings.app_env or "dev").lower() != "prod":
+        @app.get("/_debug/provider")
+        async def provider_info():  # type: ignore
+            s = load_settings()
+            provider = get_calendar_provider(s)
+            provider_name = provider.__class__.__name__ if provider else None
+            return {
+                "provider": provider_name,
+                "google_configured": bool(s.google_creds_json and s.google_calendar_id),
+                "calendar_id": s.google_calendar_id,
+            }
 
     # Health endpoint
     @app.get("/healthz")
