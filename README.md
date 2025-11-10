@@ -43,3 +43,10 @@ Agents (Phase 3)
 - Env toggles:
   - `AGENT_AUTO_REPLY=true` to send automatic French follow-ups via WhatsApp
   - `AGENT_DRY_RUN=true` to log instead of sending (default)
+
+Scheduling (Phase 4)
+- Dev in-memory calendar provider enables a thin E2E flow:
+  - When name/reason/time are captured and normalized, the app checks availability, books a 30-min slot, and sends a booking summary via WhatsApp.
+  - If unavailable, it proposes up to 2 alternatives and asks the patient to choose (reply 1 or 2). The system books the chosen slot.
+- Google Calendar integration is planned next; see `docs/plan/phases/phase-04-calendar-scheduling.md`.
+ - To enable Google Calendar, see `docs/plan/SETUP_GOOGLE_CALENDAR.md`.

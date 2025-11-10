@@ -1,6 +1,6 @@
 # Phase 4 — Calendar Integration & Scheduling
 
-Status: [ ] Not Started · Owner: TBC · Target: TBC
+Status: [~] In Progress · Owner: TBC · Target: TBC
 
 Goals
 - Check availability and create appointments with timezone handling.
@@ -10,14 +10,15 @@ Scope In
 
 Tasks
 - [ ] Connect to Google Calendar (service account or OAuth as needed)
-- [ ] Implement availability lookup on clinic calendar
-- [ ] Parse French dates/times and convert to clinic timezone
-- [ ] Propose up to two alternative time slots if unavailable
-- [ ] Create calendar event with clinic + patient details
+- [x] Implement availability lookup on clinic calendar (dev in-memory provider)
+- [x] Parse French dates/times and convert to clinic timezone
+- [x] Propose up to two alternative time slots if unavailable (dev in-memory provider)
+- [x] Create calendar event with clinic + patient details (dev in-memory provider)
+- [x] Handle alternative selection (patient replies 1/2)
 - [ ] Update patient calendar or provide ICS invite when email unknown
 
 Deliverables
-- Scheduling module creating events after confirmation
+- Scheduling module creating events after confirmation (dev flow complete with in-memory provider)
 
 Acceptance Criteria
 - Confirmed bookings create events with correct time and attendees
@@ -30,4 +31,3 @@ Dependencies
 
 Links
 - FRD 5.3 Scheduling
-
