@@ -1,0 +1,265 @@
+from __future__ import annotations
+
+import re
+from datetime import datetime, timedelta
+from typing import List, Optional, Tuple, Union, Dict, Any
+
+from app.config import Settings
+from agents.datetime_fr import parse_preferred_time_fr, format_fr_human
+from agents.session import SessionState
+from connectors.calendar.provider import get_calendar_provider
+
+
+def _is_weekend(dt: datetime) -> bool:
+    return dt.weekday() >= 5
+
+
+def _slots_from_preference(start_iso: str, *, tz: str, plage: Optional[str]) -> List[datetime]:
+    base = datetime.fromisoformat(start_iso)
+    hours = [9, 14, 18]
+    if plage:
+        pl = plage.lower()
+        if "matin" in pl:
+            hours = [9, 10, 11]
+        elif "après" in pl or "apres" in pl:
+            hours = [14, 15, 16]
+        elif "soir" in pl:
+            hours = [18, 19, 17]
+    out: List[datetime] = []
+    # try same day, then subsequent business days
+    day = base.replace(hour=hours[0], minute=0, second=0, microsecond=0)
+    for d in range(0, 10):
+        cur = day + timedelta(days=d)
+        if _is_weekend(cur):
+            continue
+        for h in hours:
+            candidate = cur.replace(hour=h)
+            out.append(candidate)
+    return out
+
+
+def _offer_three_slots(settings: Settings, st: SessionState, start_iso: str) -> Tuple[List[str], List[str]]:
+    provider = get_calendar_provider(settings)
+    iso_list: List[str] = []
+    labels: List[str] = []
+    if provider is None:
+        # fallback: offer next three business-day 10:00 slots
+        base = datetime.fromisoformat(start_iso)
+        day = base
+        while len(iso_list) < 3:
+            day += timedelta(days=1)
+            if _is_weekend(day):
+                continue
+            slot = day.replace(hour=10, minute=0, second=0, microsecond=0)
+            iso_list.append(slot.isoformat())
+            labels.append(format_fr_human(slot.isoformat()))
+        return iso_list, labels
+
+    plage = st.plage_horaire
+    for dt in _slots_from_preference(start_iso, tz=settings.clinic_tz, plage=plage):
+        if provider.is_available(dt, duration_min=30):
+            iso_list.append(dt.isoformat())
+            labels.append(format_fr_human(dt.isoformat()))
+            if len(iso_list) >= 3:
+                break
+    # If still not enough, keep scanning next business days at 10:00
+    day = datetime.fromisoformat(start_iso)
+    while len(iso_list) < 3:
+        day += timedelta(days=1)
+        if _is_weekend(day):
+            continue
+        dt = day.replace(hour=10, minute=0, second=0, microsecond=0)
+        if provider.is_available(dt, duration_min=30):
+            iso_list.append(dt.isoformat())
+            labels.append(format_fr_human(dt.isoformat()))
+    return iso_list, labels
+
+
+def handle_message(text: str, st: SessionState, settings: Settings) -> Optional[Union[str, Dict[str, Any]]]:
+    t = (text or "").strip()
+    low = t.lower()
+
+    # STOP handling
+    if low == "stop":
+        st.stop_opt_out = True
+        return "D’accord, nous ne vous enverrons plus de messages."
+    if st.stop_opt_out:
+        return None
+
+    # Entry greeting
+    if not st.stage:
+        st.stage = "identite"
+        return (
+            "Bonjour 👋 Vous êtes en contact avec l’assistant du cabinet dentaire. "
+            "Je peux vous aider à prendre, décaler ou annuler un rendez-vous. "
+            "En poursuivant, vous acceptez l’utilisation de vos informations pour gérer vos rendez-vous. "
+            "Tapez STOP pour ne plus recevoir de messages. En cas d’urgence vitale, appelez le 112.\n\n"
+            "Pour commencer, indiquez Nom + Prénom et votre date de naissance (JJ/MM/AAAA)."
+        )
+
+    # Cancel / reschedule intents
+    if any(k in low for k in ["annuler", "annulation"]):
+        st.stage = "annuler_confirm"
+        return "Je peux annuler votre rendez-vous. Confirmez OUI pour annuler."
+    if any(k in low for k in ["décaler", "decaler", "replanifier", "changer"]):
+        st.stage = "preferences"
+        return "D’accord, regardons d’autres créneaux. Avez-vous une préférence de jour ou d’horaire ?"
+
+    # Identity stage
+    if st.stage == "identite":
+        m = re.search(r"(\d{2}/\d{2}/\d{4})", t)
+        if m:
+            st.dob = m.group(1)
+            name = t.replace(st.dob, "").strip()
+            if name:
+                st.name = name
+        if not st.name or not st.dob:
+            st.failed_identity += 1
+            if st.failed_identity >= 2:
+                st.stage = "handoff"
+                return "Je vous mets en relation avec l’équipe. Merci de patienter."
+            return "Pour commencer, indiquez Nom + Prénom et votre date de naissance (JJ/MM/AAAA)."
+        st.stage = "service"
+        return {
+            "type": "service_buttons",
+            "text": (
+                f"Merci, j’ai bien noté: {st.name} ({st.dob}). Quel type de rendez-vous souhaitez-vous ?\n"
+                "1) Contrôle / prévention\n2) Détartrage\n3) Douleur / urgence"
+            ),
+            "buttons": [
+                {"id": "service_controle", "title": "Contrôle / prévention"},
+                {"id": "service_detartrage", "title": "Détartrage"},
+                {"id": "service_urgence", "title": "Douleur / urgence"},
+            ],
+        }
+
+    # Service stage
+    if st.stage == "service":
+        mapping = {
+            "1": "controle",
+            "2": "detartrage",
+            "3": "urgence",
+            "4": "autre",
+        }
+        chosen = None
+        if t in mapping:
+            chosen = mapping[t]
+        else:
+            if any(k in low for k in ["contrôle", "controle"]):
+                chosen = "controle"
+            elif "détartrage" in low or "detartrage" in low:
+                chosen = "detartrage"
+            elif "douleur" in low or "urgence" in low:
+                chosen = "urgence"
+            elif "autre" in low:
+                chosen = "autre"
+        if not chosen:
+            return (
+                "Quel type de rendez-vous souhaitez-vous ?\n"
+                "1) Contrôle / prévention\n2) Détartrage\n3) Douleur / urgence"
+            )
+        st.service = chosen
+        if chosen == "urgence":
+            st.stage = "triage"
+            return (
+                "Sur une échelle de 0 à 10, à combien évaluez-vous la douleur ? "
+                "Y a-t-il gonflement, fièvre ou traumatisme récent ?"
+            )
+        st.stage = "preferences"
+        return f"Très bien {st.name or ''}. Avez-vous une préférence de jour (ex. demain, lundi prochain) et d’horaire (matin / après-midi / soir) ?"
+
+    # Triage stage
+    if st.stage == "triage":
+        score = None
+        m = re.search(r"(\d{1,2})", low)
+        if m:
+            try:
+                score = int(m.group(1))
+            except Exception:
+                score = None
+        red = any(k in low for k in ["gonflement", "fièvre", "fievre", "traumatisme"])
+        st.douleur_score = score
+        st.red_flags = red
+        if (score is not None and score >= 8) or red:
+            st.stage = "handoff"
+            return "Je vous mets en relation avec l’équipe. Merci de patienter."
+        st.stage = "preferences"
+        return f"Merci {st.name or ''}. Avez-vous une préférence de jour et d’horaire (matin / après-midi / soir) ?"
+
+    # Preferences stage
+    if st.stage == "preferences":
+        st.date_cible_text = t
+        if any(k in low for k in ["matin", "après-midi", "apres-midi", "soir"]):
+            st.plage_horaire = "matin" if "matin" in low else ("après-midi" if ("après" in low or "apres" in low) else "soir")
+        # parse date target
+        try:
+            parsed = parse_preferred_time_fr(st.date_cible_text or t, tz=settings.clinic_tz)
+            if parsed and parsed.iso:
+                st.preferred_time_iso = parsed.iso
+        except Exception:
+            pass
+        if not st.preferred_time_iso:
+            return "Pouvez-vous préciser un jour (ex. demain, lundi prochain) et un horaire (matin / après-midi / soir) ?"
+        # Offer three slots
+        st.stage = "offer_slots"
+        iso_list, labels = _offer_three_slots(settings, st, st.preferred_time_iso)
+        st.slots_offered = iso_list[:3]
+        # Text-only offer (interactive buttons removed)
+        items = [f"{i+1}) {labels[i]}" for i in range(min(3, len(labels)))]
+        return "Voici des créneaux disponibles : " + ", ".join(items) + ". Répondez 1, 2 ou 3."
+
+    if st.stage == "offer_slots" or st.stage == "await_choice":
+        st.stage = "await_choice"
+        if low.startswith("1") or low.startswith("2") or low.startswith("3"):
+            idx = 0 if low.startswith("1") else (1 if low.startswith("2") else 2)
+            if st.slots_offered and 0 <= idx < len(st.slots_offered):
+                st.preferred_time_iso = st.slots_offered[idx]
+                st.stage = "confirm"
+                return "Parfait. Merci de confirmer OUI pour finaliser la réservation."
+        return "Répondez 1, 2 ou 3 pour choisir un créneau, ou dites Décaler pour d’autres options."
+
+    if st.stage == "confirm":
+        if low.strip() == "oui":
+            # Finalize booking
+            if not st.preferred_time_iso:
+                # Should not happen, re-enter preferences
+                st.stage = "preferences"
+                return "Merci. Précisez un jour et un horaire (matin / après-midi / soir)."
+            provider = get_calendar_provider(settings)
+            try:
+                start = datetime.fromisoformat(st.preferred_time_iso)
+                title = f"Mediflow - {st.name or ''} 🦷".strip()
+                desc = f"Motif: {st.reason or ''}".strip()
+                if provider and provider.is_available(start, duration_min=30):
+                    evt = provider.create_event(
+                        start,
+                        duration_min=30,
+                        title=title,
+                        description=desc,
+                        patient_phone=st.from_waid,
+                        patient_name=st.name,
+                    )
+                    st.event_id = evt.id
+                # Confirmation message (templated)
+                return (
+                    "Parfait 👍 Votre rendez-vous est confirmé le "
+                    f"{format_fr_human(st.preferred_time_iso)}. "
+                    "Vous recevrez un rappel 24h avant."
+                )
+            finally:
+                # Move to a terminal stage
+                st.stage = "booked"
+        # Not an explicit OUI
+        return "Confirmez OUI pour finaliser, ou dites Décaler pour d’autres options."
+
+    if st.stage == "annuler_confirm":
+        if low.strip() == "oui":
+            st.stage = "annule"
+            return "Votre rendez-vous a été annulé."
+        return "Confirmez OUI pour annuler, ou Prendre / Décaler sinon."
+
+    if st.stage == "handoff":
+        return "Je vous mets en relation avec l’équipe. Merci de patienter."
+
+    # Fallback menu
+    return "Je n’ai pas bien compris. Voulez-vous Prendre, Décaler ou Annuler un rendez-vous ?"

@@ -28,6 +28,11 @@ class Settings:
     openai_project: Optional[str] = None
     agent_auto_reply: bool = False
     agent_dry_run: bool = True
+    agent_generate_replies: bool = False
+    agent_generate_followups: bool = False
+    agent_generate_confirmations: bool = True
+    agent_generate_alternatives: bool = True
+    flow_v2_enabled: bool = False
 
     # WhatsApp (Cloud API)
     whatsapp_token: Optional[str] = None
@@ -88,6 +93,11 @@ def load_settings() -> Settings:
         openai_project=getenv("OPENAI_PROJECT"),
         agent_auto_reply=getenv_bool("AGENT_AUTO_REPLY", False),
         agent_dry_run=getenv_bool("AGENT_DRY_RUN", True),
+        agent_generate_replies=getenv_bool("AGENT_GENERATE_REPLIES", False),
+        agent_generate_followups=getenv_bool("AGENT_GENERATE_FOLLOWUPS", False),
+        agent_generate_confirmations=getenv_bool("AGENT_GENERATE_CONFIRMATIONS", True),
+        agent_generate_alternatives=getenv_bool("AGENT_GENERATE_ALTERNATIVES", True),
+        flow_v2_enabled=getenv_bool("FLOW_V2_ENABLED", False),
         whatsapp_token=getenv("WHATSAPP_TOKEN"),
         whatsapp_verify_token=getenv("WHATSAPP_VERIFY_TOKEN"),
         whatsapp_phone_id=getenv("WHATSAPP_PHONE_ID"),

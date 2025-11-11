@@ -43,6 +43,11 @@ Agents (Phase 3)
 - Env toggles:
   - `AGENT_AUTO_REPLY=true` to send automatic French follow-ups via WhatsApp
   - `AGENT_DRY_RUN=true` to log instead of sending (default)
+  - `AGENT_GENERATE_REPLIES=true` to let the model compose French messages (vouvoiement, empathetic tone). If false, templated messages are used.
+  - Fine-grained controls:
+    - `AGENT_GENERATE_FOLLOWUPS` (default false to avoid loops)
+    - `AGENT_GENERATE_CONFIRMATIONS` (default true)
+    - `AGENT_GENERATE_ALTERNATIVES` (default true)
 
 Scheduling (Phase 4)
 - Dev in-memory calendar provider enables a thin E2E flow:

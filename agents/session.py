@@ -12,7 +12,19 @@ class SessionState:
     event_id: Optional[str] = None
     pending_alternatives: Optional[List[str]] = None
     pending_duration_min: Optional[int] = None
-    event_id: Optional[str] = None
+    # Flow V2 fields
+    stage: Optional[str] = None
+    dob: Optional[str] = None
+    service: Optional[str] = None
+    douleur_score: Optional[int] = None
+    red_flags: Optional[bool] = None
+    date_cible_text: Optional[str] = None
+    plage_horaire: Optional[str] = None
+    slots_offered: Optional[List[str]] = None
+    stop_opt_out: bool = False
+    failed_identity: int = 0
+    # Classic flow (extraction) – track which fields we've already prompted for
+    prompted_fields: Optional[List[str]] = None
 
 
 class InMemorySessionStore:

@@ -96,9 +96,24 @@ def normalize_inbound(payload: Dict[str, Any]) -> List[NormalizedMessage]:
             for m in messages:
                 m_type = m.get("type")
                 text_body = None
+                interactive_reply_id = None
+                interactive_reply_title = None
                 if m_type == "text":
                     text = m.get("text") or {}
                     text_body = text.get("body")
+                elif m_type == "interactive":
+                    inter = m.get("interactive") or {}
+                    # button_reply or list_reply
+                    if inter.get("type") == "button_reply":
+                        br = inter.get("button_reply") or {}
+                        interactive_reply_id = br.get("id")
+                        interactive_reply_title = br.get("title")
+                        text_body = interactive_reply_title or interactive_reply_id
+                    elif inter.get("type") == "list_reply":
+                        lr = inter.get("list_reply") or {}
+                        interactive_reply_id = lr.get("id")
+                        interactive_reply_title = lr.get("title")
+                        text_body = interactive_reply_title or interactive_reply_id
                 out.append(
                     NormalizedMessage(
                         message_id=m.get("id") or "",
@@ -109,6 +124,8 @@ def normalize_inbound(payload: Dict[str, Any]) -> List[NormalizedMessage]:
                         text=text_body,
                         contact_name=contact_name,
                         raw=m,
+                        interactive_reply_id=interactive_reply_id,
+                        interactive_reply_title=interactive_reply_title,
                     )
                 )
     return out

@@ -12,4 +12,6 @@ class NormalizedMessage:
     text: Optional[str]
     contact_name: Optional[str]
     raw: Dict[str, Any]
-
+    # Interactive replies (buttons/lists)
+    interactive_reply_id: Optional[str] = None
+    interactive_reply_title: Optional[str] = None
