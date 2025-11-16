@@ -116,6 +116,7 @@ async def handle_inbound_message(msg: NormalizedMessage, settings: Settings) -> 
                         description=f"Motif: {state.reason or ''}",
                         patient_phone=state.from_waid,
                         patient_name=state.name,
+                        patient_email=getattr(state, "email", None),
                     )
                     state.event_id = evt.id
                     state.preferred_time_iso = iso
@@ -253,6 +254,7 @@ async def handle_inbound_message(msg: NormalizedMessage, settings: Settings) -> 
                         description=f"Motif: {state.reason or ''}",
                         patient_phone=state.from_waid,
                         patient_name=state.name,
+                        patient_email=getattr(state, "email", None),
                     )
                     state.event_id = evt.id
                     # Generative confirmation or templated fallback

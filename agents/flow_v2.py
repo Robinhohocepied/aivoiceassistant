@@ -105,20 +105,36 @@ def handle_message(text: str, st: SessionState, settings: Settings) -> Optional[
         st.stage = "preferences"
         return "D’accord, regardons d’autres créneaux. Avez-vous une préférence de jour ou d’horaire ?"
 
-    # Identity stage
+    # Identity stage (expects: name + DOB + email)
     if st.stage == "identite":
-        m = re.search(r"(\d{2}/\d{2}/\d{4})", t)
-        if m:
-            st.dob = m.group(1)
-            name = t.replace(st.dob, "").strip()
-            if name:
-                st.name = name
-        if not st.name or not st.dob:
+        m_dob = re.search(r"(\d{2}/\d{2}/\d{4})", t)
+        if m_dob:
+            st.dob = m_dob.group(1)
+        m_email = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", t)
+        if m_email:
+            st.email = m_email.group(0)
+        # Derive name by removing dob and email
+        tmp = t
+        if m_dob:
+            tmp = tmp.replace(st.dob or "", " ")
+        if m_email:
+            tmp = tmp.replace(st.email or "", " ")
+        name = tmp.strip()
+        if name:
+            st.name = name
+        if not st.name or not st.dob or not st.email:
             st.failed_identity += 1
             if st.failed_identity >= 2:
                 st.stage = "handoff"
                 return "Je vous mets en relation avec l’équipe. Merci de patienter."
-            return "Pour commencer, indiquez Nom + Prénom et votre date de naissance (JJ/MM/AAAA)."
+            # Targeted re-asks
+            if not st.name and (st.dob or st.email):
+                return "Merci. Indiquez votre Nom + Prénom, s’il vous plaît."
+            if not st.dob and (st.name or st.email):
+                return "Merci. Indiquez votre date de naissance (JJ/MM/AAAA), s’il vous plaît."
+            if not st.email and (st.name or st.dob):
+                return "Merci. Indiquez votre adresse email, s’il vous plaît."
+            return "Pour commencer, indiquez Nom + Prénom, votre date de naissance (JJ/MM/AAAA) et votre email."
         st.stage = "service"
         return {
             "type": "service_buttons",
@@ -238,13 +254,17 @@ def handle_message(text: str, st: SessionState, settings: Settings) -> Optional[
                         description=desc,
                         patient_phone=st.from_waid,
                         patient_name=st.name,
+                        patient_email=getattr(st, "email", None),
                     )
                     st.event_id = evt.id
                 # Confirmation message (templated)
+                extra = ""
+                if getattr(settings, "calendar_send_updates", False) and getattr(st, "email", None):
+                    extra = " Une invitation vous a été envoyée par email."
                 return (
                     "Parfait 👍 Votre rendez-vous est confirmé le "
                     f"{format_fr_human(st.preferred_time_iso)}. "
-                    "Vous recevrez un rappel 24h avant."
+                    "Vous recevrez un rappel 24h avant." + extra
                 )
             finally:
                 # Move to a terminal stage

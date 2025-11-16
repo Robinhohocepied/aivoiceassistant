@@ -77,6 +77,7 @@ class GoogleCalendarProvider(CalendarProvider):
         self._service = self._build("calendar", "v3", credentials=creds)
         self._calendar_id = settings.google_calendar_id or "primary"
         self._tz = settings.clinic_tz or "Europe/Brussels"
+        self._send_updates = getattr(settings, "calendar_send_updates", False)
 
     def _overlaps(self, start: datetime, end: datetime) -> bool:
         # Query events within [start, end)
@@ -120,6 +121,7 @@ class GoogleCalendarProvider(CalendarProvider):
         description: Optional[str] = None,
         patient_phone: Optional[str] = None,
         patient_name: Optional[str] = None,
+        patient_email: Optional[str] = None,
     ) -> CalendarEvent:
         end = start + timedelta(minutes=duration_min)
         body: Dict[str, Any] = {
@@ -134,7 +136,16 @@ class GoogleCalendarProvider(CalendarProvider):
                 }
             },
         }
-        evt = self._service.events().insert(calendarId=self._calendar_id, body=body).execute()
+        attendees: list[dict] = []
+        if patient_email:
+            attendees.append({"email": patient_email})
+        if attendees:
+            body["attendees"] = attendees
+        insert = self._service.events().insert(calendarId=self._calendar_id, body=body)
+        if self._send_updates:
+            evt = insert.sendUpdates("all").execute()  # type: ignore[attr-defined]
+        else:
+            evt = insert.execute()
         return CalendarEvent(
             id=evt.get("id", ""),
             start=start,

@@ -33,6 +33,7 @@ class Settings:
     agent_generate_confirmations: bool = True
     agent_generate_alternatives: bool = True
     flow_v2_enabled: bool = False
+    calendar_send_updates: bool = False
 
     # WhatsApp (Cloud API)
     whatsapp_token: Optional[str] = None
@@ -98,6 +99,7 @@ def load_settings() -> Settings:
         agent_generate_confirmations=getenv_bool("AGENT_GENERATE_CONFIRMATIONS", True),
         agent_generate_alternatives=getenv_bool("AGENT_GENERATE_ALTERNATIVES", True),
         flow_v2_enabled=getenv_bool("FLOW_V2_ENABLED", False),
+        calendar_send_updates=getenv_bool("CALENDAR_SEND_UPDATES", False),
         whatsapp_token=getenv("WHATSAPP_TOKEN"),
         whatsapp_verify_token=getenv("WHATSAPP_VERIFY_TOKEN"),
         whatsapp_phone_id=getenv("WHATSAPP_PHONE_ID"),

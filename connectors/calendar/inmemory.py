@@ -56,6 +56,7 @@ class InMemoryCalendar(CalendarProvider):
         description: Optional[str] = None,
         patient_phone: Optional[str] = None,
         patient_name: Optional[str] = None,
+        patient_email: Optional[str] = None,
     ) -> CalendarEvent:
         end = start + timedelta(minutes=duration_min)
         evt = CalendarEvent(
@@ -73,4 +74,3 @@ class InMemoryCalendar(CalendarProvider):
 
 # Singleton instance for app usage
 store = InMemoryCalendar()
-

@@ -7,6 +7,7 @@ class SessionState:
     from_waid: str
     name: Optional[str] = None
     reason: Optional[str] = None
+    email: Optional[str] = None
     preferred_time: Optional[str] = None
     preferred_time_iso: Optional[str] = None
     event_id: Optional[str] = None
