@@ -32,8 +32,15 @@ class Settings:
     agent_generate_followups: bool = False
     agent_generate_confirmations: bool = True
     agent_generate_alternatives: bool = True
+    agent_generate_greeting: bool = False
+    agent_generate_id_ack: bool = False
     flow_v2_enabled: bool = False
     calendar_send_updates: bool = False
+    # Demo / web chat config
+    demo_daily_limit: int = 20
+    demo_timezone: str = "Europe/Amsterdam"
+    demo_session_ttl_hours: int = 48
+    max_messages_per_demo_session: int = 40
 
     # WhatsApp (Cloud API)
     whatsapp_token: Optional[str] = None
@@ -44,7 +51,10 @@ class Settings:
     # Google Calendar
     google_creds_json: Optional[str] = None
     google_creds_json_b64: Optional[str] = None
+    google_delegated_subject: Optional[str] = None
     google_calendar_id: Optional[str] = None
+    calendar_id_whatsapp: Optional[str] = None
+    calendar_id_web_demo: Optional[str] = None
 
     # Scheduling / Jobs
     reminder_hours_before: int = 24
@@ -98,8 +108,14 @@ def load_settings() -> Settings:
         agent_generate_followups=getenv_bool("AGENT_GENERATE_FOLLOWUPS", False),
         agent_generate_confirmations=getenv_bool("AGENT_GENERATE_CONFIRMATIONS", True),
         agent_generate_alternatives=getenv_bool("AGENT_GENERATE_ALTERNATIVES", True),
+        agent_generate_greeting=getenv_bool("AGENT_GENERATE_GREETING", False),
+        agent_generate_id_ack=getenv_bool("AGENT_GENERATE_ID_ACK", False),
         flow_v2_enabled=getenv_bool("FLOW_V2_ENABLED", False),
         calendar_send_updates=getenv_bool("CALENDAR_SEND_UPDATES", False),
+        demo_daily_limit=int(os.getenv("DEMO_DAILY_LIMIT", "20")),
+        demo_timezone=getenv("DEMO_TIMEZONE", "Europe/Amsterdam") or "Europe/Amsterdam",
+        demo_session_ttl_hours=int(os.getenv("DEMO_SESSION_TTL_HOURS", "48")),
+        max_messages_per_demo_session=int(os.getenv("MAX_MESSAGES_PER_DEMO_SESSION", "40")),
         whatsapp_token=getenv("WHATSAPP_TOKEN"),
         whatsapp_verify_token=getenv("WHATSAPP_VERIFY_TOKEN"),
         whatsapp_phone_id=getenv("WHATSAPP_PHONE_ID"),
@@ -107,7 +123,10 @@ def load_settings() -> Settings:
         or "https://graph.facebook.com/v18.0",
         google_creds_json=getenv("GOOGLE_CREDS_JSON"),
         google_creds_json_b64=getenv("GOOGLE_CREDS_JSON_B64"),
+        google_delegated_subject=getenv("GOOGLE_DELEGATED_SUBJECT"),
         google_calendar_id=getenv("GOOGLE_CALENDAR_ID"),
+        calendar_id_whatsapp=getenv("CALENDAR_ID_WHATSAPP"),
+        calendar_id_web_demo=getenv("CALENDAR_ID_WEB_DEMO"),
         reminder_hours_before=getenv_int("REMINDER_HOURS_BEFORE", 24),
         redact_logs=getenv_bool("REDACT_LOGS", True),
         data_retention_days=getenv_int("DATA_RETENTION_DAYS", 90),

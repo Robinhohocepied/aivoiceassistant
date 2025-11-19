@@ -97,6 +97,33 @@ class WhatsAppClient:
         assert last_exc is not None
         raise last_exc
 
+    async def send_reaction(
+        self,
+        to: str,
+        message_id: str,
+        emoji: str = "👍",
+        dry_run: bool = False,
+    ) -> Dict[str, Any]:
+        to_sanitized = "".join(ch for ch in to if ch.isdigit())
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": to_sanitized,
+            "type": "reaction",
+            "reaction": {"message_id": message_id, "emoji": emoji},
+        }
+        headers = {"Authorization": f"Bearer {self.token}", "Content-Type": "application/json"}
+        if dry_run:
+            logger.info("whatsapp send_dry_run_reaction", extra={"to": to, "message_id": message_id, "emoji": emoji})
+            return {"dry_run": True, "payload": payload}
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.post(self.messages_url, headers=headers, json=payload)
+                resp.raise_for_status()
+                return resp.json()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("whatsapp_reaction_failed", extra={"error": str(exc)})
+            raise
+
     async def send_list(
         self,
         to: str,

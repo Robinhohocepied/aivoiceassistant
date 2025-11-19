@@ -35,14 +35,10 @@ async def handle_inbound_message(msg: NormalizedMessage, settings: Settings) -> 
         },
     )
 
-    # Only process text messages in Phase 3
-    if msg.type != "text" or not msg.text:
-        return
-
-    # Retrieve session state early to support alternative selection without OpenAI
+    # Retrieve session state early (we may handle interactive clicks too)
     state = session_store.get(msg.from_waid)
-    incoming_text = msg.text or ""
-    # Map interactive reply IDs to Flow V2 inputs
+    incoming_text = (msg.text or "")
+    # Map interactive reply IDs to Flow V2 inputs (service/slot buttons)
     if msg.type == "interactive" and getattr(msg, "interactive_reply_id", None):
         iri = (msg.interactive_reply_id or "").lower()
         if iri in ("slot_1", "slot1"):
@@ -61,6 +57,10 @@ async def handle_inbound_message(msg: NormalizedMessage, settings: Settings) -> 
             }
             incoming_text = mapping.get(iri, incoming_text)
 
+    # For the classic (non-Flow V2) path, only process plain text messages
+    if not settings.flow_v2_enabled and (msg.type != "text" or not msg.text):
+        return
+
     # Flow V2 (deterministic brief-driven flow)
     if settings.flow_v2_enabled:
         out = flow2_handle(incoming_text, state, settings)
@@ -73,18 +73,35 @@ async def handle_inbound_message(msg: NormalizedMessage, settings: Settings) -> 
                         logger.info("auto_reply_skipped", extra={"reason": "whatsapp_client_unconfigured"})
                         return
                     if isinstance(out, dict) and out.get("type") == "service_buttons":
-                        # Send text fallback then interactive buttons (3 max)
-                        await wa_client.send_text(to=msg.from_waid, body=str(out.get("text") or ""), dry_run=settings.agent_dry_run)
-                        buttons = list(out.get("buttons") or [])[:3]
-                        result = await wa_client.send_buttons(
-                            to=msg.from_waid,
-                            body_text="Sélectionnez un service :",
-                            buttons=buttons,
-                            dry_run=settings.agent_dry_run,
-                        )
+                        # Try interactive buttons first; on error fallback to text.
+                        try:
+                            buttons = list(out.get("buttons") or [])[:3]
+                            result = await wa_client.send_buttons(
+                                to=msg.from_waid,
+                                body_text="Sélectionnez un service :",
+                                buttons=buttons,
+                                dry_run=settings.agent_dry_run,
+                            )
+                        except Exception:
+                            result = await wa_client.send_text(
+                                to=msg.from_waid,
+                                body=str(out.get("text") or "Quel type de rendez-vous souhaitez-vous ?\n1) Contrôle\n2) Détartrage\n3) Urgence"),
+                                dry_run=settings.agent_dry_run,
+                            )
                     else:
                         result = await wa_client.send_text(to=msg.from_waid, body=str(out), dry_run=settings.agent_dry_run)
                     logger.info("auto_reply", extra={"to": msg.from_waid, "dry_run": settings.agent_dry_run, "result": str(result)})
+                    # If user just confirmed with 'OUI' and flow finalized booking, add a thumbs-up reaction to their message
+                    try:
+                        if incoming_text.strip().lower() == "oui" and getattr(state, "stage", None) == "booked":
+                            await wa_client.send_reaction(
+                                to=msg.from_waid,
+                                message_id=msg.message_id,
+                                emoji="👍",
+                                dry_run=settings.agent_dry_run,
+                            )
+                    except Exception:
+                        pass
                 except Exception as exc:  # noqa: BLE001
                     logger.exception("auto-reply failed: %s", exc)
             return

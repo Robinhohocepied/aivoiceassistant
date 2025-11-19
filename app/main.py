@@ -10,6 +10,7 @@ from connectors.whatsapp import get_router as get_whatsapp_router
 from connectors.calendar.provider import get_calendar_provider
 from agents.session import store as session_store
 from connectors.whatsapp.store import store as wa_store
+from app.api_web_demo import router as web_demo_router
 
 
 def create_app() -> FastAPI:
@@ -31,6 +32,7 @@ def create_app() -> FastAPI:
 
     # Routers
     app.include_router(get_whatsapp_router(settings))
+    app.include_router(web_demo_router)
 
     # Debug: show active calendar provider (dev only)
     if (settings.app_env or "dev").lower() != "prod":

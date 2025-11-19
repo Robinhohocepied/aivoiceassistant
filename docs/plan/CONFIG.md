@@ -38,3 +38,12 @@ Notes
 - Do not commit real secrets.
 - For local dev, use a `.env` file loaded via a standard library (e.g., `python-dotenv`).
 - Production should use a secrets manager (e.g., cloud provider).
+- Demo / WebChat
+  - `DEMO_DAILY_LIMIT` (default: 20) – max new demo sessions per day
+  - `DEMO_TIMEZONE` (default: Europe/Amsterdam) – timezone to derive the daily date key
+  - `DEMO_SESSION_TTL_HOURS` (default: 48) – demo session retention window
+  - `MAX_MESSAGES_PER_DEMO_SESSION` (default: 40) – abuse protection per session
+
+- Calendar per channel
+  - `CALENDAR_ID_WHATSAPP` – production calendar ID (optional; falls back to `GOOGLE_CALENDAR_ID`)
+  - `CALENDAR_ID_WEB_DEMO` – dedicated demo calendar ID

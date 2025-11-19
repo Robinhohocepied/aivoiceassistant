@@ -7,6 +7,7 @@ from typing import List, Optional, Tuple, Union, Dict, Any
 from app.config import Settings
 from agents.datetime_fr import parse_preferred_time_fr, format_fr_human
 from agents.session import SessionState
+from agents.replygen import greeting as gen_greeting, id_ack as gen_id_ack, confirmation as gen_confirmation
 from connectors.calendar.provider import get_calendar_provider
 
 
@@ -89,12 +90,17 @@ def handle_message(text: str, st: SessionState, settings: Settings) -> Optional[
     # Entry greeting
     if not st.stage:
         st.stage = "identite"
+        if getattr(settings, "agent_generate_replies", False) and getattr(settings, "agent_generate_greeting", False):
+            out = gen_greeting(settings)
+            if out:
+                return out
         return (
             "Bonjour 👋 Vous êtes en contact avec l’assistant du cabinet dentaire. "
             "Je peux vous aider à prendre, décaler ou annuler un rendez-vous. "
             "En poursuivant, vous acceptez l’utilisation de vos informations pour gérer vos rendez-vous. "
             "Tapez STOP pour ne plus recevoir de messages. En cas d’urgence vitale, appelez le 112.\n\n"
-            "Pour commencer, indiquez Nom + Prénom et votre date de naissance (JJ/MM/AAAA)."
+            "Pour commencer, indiquez Nom + Prénom, votre date de naissance (JJ/MM/AAAA) et votre email. "
+            "En savoir plus: https://mediflow-ai.vercel.app/"
         )
 
     # Cancel / reschedule intents
@@ -136,16 +142,18 @@ def handle_message(text: str, st: SessionState, settings: Settings) -> Optional[
                 return "Merci. Indiquez votre adresse email, s’il vous plaît."
             return "Pour commencer, indiquez Nom + Prénom, votre date de naissance (JJ/MM/AAAA) et votre email."
         st.stage = "service"
+        ack = None
+        if getattr(settings, "agent_generate_replies", False) and getattr(settings, "agent_generate_id_ack", False):
+            ack = gen_id_ack(settings, name=st.name, dob=st.dob, email=getattr(st, "email", None))
+        if not ack:
+            ack = f"Merci, j’ai bien noté: {st.name} ({st.dob}) – {st.email}. Quel type de rendez-vous souhaitez-vous ?"
         return {
             "type": "service_buttons",
-            "text": (
-                f"Merci, j’ai bien noté: {st.name} ({st.dob}). Quel type de rendez-vous souhaitez-vous ?\n"
-                "1) Contrôle / prévention\n2) Détartrage\n3) Douleur / urgence"
-            ),
+            "text": (ack + "\n" "1) Contrôle / prévention\n2) Détartrage\n3) Douleur / urgence"),
             "buttons": [
-                {"id": "service_controle", "title": "Contrôle / prévention"},
+                {"id": "service_controle", "title": "Contrôle"},
                 {"id": "service_detartrage", "title": "Détartrage"},
-                {"id": "service_urgence", "title": "Douleur / urgence"},
+                {"id": "service_urgence", "title": "Urgence"},
             ],
         }
 
@@ -257,15 +265,20 @@ def handle_message(text: str, st: SessionState, settings: Settings) -> Optional[
                         patient_email=getattr(st, "email", None),
                     )
                     st.event_id = evt.id
-                # Confirmation message (templated)
-                extra = ""
-                if getattr(settings, "calendar_send_updates", False) and getattr(st, "email", None):
-                    extra = " Une invitation vous a été envoyée par email."
-                return (
-                    "Parfait 👍 Votre rendez-vous est confirmé le "
-                    f"{format_fr_human(st.preferred_time_iso)}. "
-                    "Vous recevrez un rappel 24h avant." + extra
-                )
+                # Confirmation message: model-polished or templated
+                reply = None
+                if getattr(settings, "agent_generate_replies", False) and getattr(settings, "agent_generate_confirmations", True):
+                    reply = gen_confirmation(settings, name=st.name, reason=st.reason, preferred_time_iso=st.preferred_time_iso)
+                if not reply:
+                    extra = ""
+                    if getattr(settings, "calendar_send_updates", False) and getattr(st, "email", None):
+                        extra = " Une invitation vous a été envoyée par email."
+                    reply = (
+                        "Parfait 👍 Votre rendez-vous est confirmé le "
+                        f"{format_fr_human(st.preferred_time_iso)}. "
+                        "Vous recevrez un rappel 24h avant." + extra
+                    )
+                return reply
             finally:
                 # Move to a terminal stage
                 st.stage = "booked"

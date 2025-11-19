@@ -14,9 +14,16 @@ Required packages (install when using this provider):
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
+import logging
 
 from app.config import Settings
 from connectors.calendar.base import CalendarEvent, CalendarProvider
+try:
+    from googleapiclient.errors import HttpError  # type: ignore
+except Exception:  # pragma: no cover
+    HttpError = Exception  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 
 def _import_google() -> Optional[Dict[str, Any]]:
@@ -73,6 +80,13 @@ class GoogleCalendarProvider(CalendarProvider):
         creds = _load_credentials(settings)
         if creds is None:
             raise RuntimeError("Google credentials not configured")
+        # Impersonate Workspace user if delegated subject configured
+        try:
+            subj = getattr(settings, "google_delegated_subject", None)
+            if subj:
+                creds = creds.with_subject(subj)  # type: ignore[attr-defined]
+        except Exception:
+            pass
         self._build = g["build"]
         self._service = self._build("calendar", "v3", credentials=creds)
         self._calendar_id = settings.google_calendar_id or "primary"
@@ -141,11 +155,37 @@ class GoogleCalendarProvider(CalendarProvider):
             attendees.append({"email": patient_email})
         if attendees:
             body["attendees"] = attendees
-        insert = self._service.events().insert(calendarId=self._calendar_id, body=body)
-        if self._send_updates:
-            evt = insert.sendUpdates("all").execute()  # type: ignore[attr-defined]
-        else:
-            evt = insert.execute()
+        try:
+            if self._send_updates:
+                evt = (
+                    self._service
+                    .events()
+                    .insert(calendarId=self._calendar_id, body=body, sendUpdates="all")
+                    .execute()
+                )
+            else:
+                evt = (
+                    self._service
+                    .events()
+                    .insert(calendarId=self._calendar_id, body=body)
+                    .execute()
+                )
+        except HttpError as e:  # type: ignore[misc]
+            msg = str(e)
+            if "forbiddenForServiceAccounts" in msg or "Domain-Wide Delegation" in msg:
+                logger.info(
+                    "google_calendar_sendupdates_forbidden_fallback",
+                    extra={"calendar_id": self._calendar_id},
+                )
+                # Fallback: create event without sendUpdates (no email invite)
+                evt = (
+                    self._service
+                    .events()
+                    .insert(calendarId=self._calendar_id, body=body)
+                    .execute()
+                )
+            else:
+                raise
         return CalendarEvent(
             id=evt.get("id", ""),
             start=start,

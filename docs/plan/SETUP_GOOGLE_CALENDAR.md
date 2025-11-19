@@ -37,6 +37,23 @@ pip install google-api-python-client google-auth
   - Code: `connectors/calendar/provider.py`
   - Google provider: `connectors/calendar/google.py`
 
+## 6) Google Workspace (Domain‑Wide Delegation) for Invites
+Service accounts cannot send invite emails on personal Gmail calendars. To send invites (`sendUpdates=all`), use a Google Workspace domain and enable Domain‑Wide Delegation (DWD):
+
+1. In Google Cloud Console → Service Account → Enable “Domain‑wide delegation”.
+2. In Workspace Admin Console → Security → API Controls → Domain‑wide delegation → Add new:
+   - Client ID: the Service Account OAuth2 Client ID
+   - Scopes: `https://www.googleapis.com/auth/calendar`
+3. Choose a Workspace user to impersonate (usually the calendar owner).
+4. In `.env` set:
+```
+GOOGLE_CREDS_JSON=/path/to/sa.json
+GOOGLE_CALENDAR_ID=clinic@yourdomain.com
+GOOGLE_DELEGATED_SUBJECT=clinic@yourdomain.com
+CALENDAR_SEND_UPDATES=true
+```
+This lets the provider insert events with attendees and have Google send the invite email as the impersonated user.
+
 ## 6) Quick sanity test (dev)
 - Start the app and send a message that yields `name`, `reason`, and `preferred_time`.
 - If Google is configured, a real event should be created in the clinic calendar; otherwise, the in-memory provider will book locally.
