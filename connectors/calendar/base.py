@@ -41,5 +41,6 @@ class CalendarProvider:
         patient_phone: Optional[str] = None,
         patient_name: Optional[str] = None,
         patient_email: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
     ) -> CalendarEvent:  # pragma: no cover - interface
         raise NotImplementedError

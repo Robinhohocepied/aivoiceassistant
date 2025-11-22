@@ -37,6 +37,8 @@ async def handle_inbound_message(msg: NormalizedMessage, settings: Settings) -> 
 
     # Retrieve session state early (we may handle interactive clicks too)
     state = session_store.get(msg.from_waid)
+    if getattr(state, 'channel', None) is None:
+        state.channel = 'whatsapp'
     incoming_text = (msg.text or "")
     # Map interactive reply IDs to Flow V2 inputs (service/slot buttons)
     if msg.type == "interactive" and getattr(msg, "interactive_reply_id", None):
@@ -134,6 +136,7 @@ async def handle_inbound_message(msg: NormalizedMessage, settings: Settings) -> 
                         patient_phone=state.from_waid,
                         patient_name=state.name,
                         patient_email=getattr(state, "email", None),
+                        idempotency_key=f"whatsapp:{state.from_waid}:{iso}",
                     )
                     state.event_id = evt.id
                     state.preferred_time_iso = iso
@@ -272,6 +275,7 @@ async def handle_inbound_message(msg: NormalizedMessage, settings: Settings) -> 
                         patient_phone=state.from_waid,
                         patient_name=state.name,
                         patient_email=getattr(state, "email", None),
+                        idempotency_key=f"whatsapp:{state.from_waid}:{state.preferred_time_iso}",
                     )
                     state.event_id = evt.id
                     # Generative confirmation or templated fallback

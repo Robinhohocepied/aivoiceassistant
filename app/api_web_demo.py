@@ -49,6 +49,7 @@ def demo_chat(payload: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
             }
         # Create initial state
         state = SessionState(from_waid=session_id)
+        state.channel = 'web_demo'
         state.stage = None
         demo_store.put(session_id, state)
 
@@ -82,4 +83,3 @@ def demo_chat(payload: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
         "limit_reached": result.signals.limit_reached,
         "session_id": session_id,
     }
-

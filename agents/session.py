@@ -5,6 +5,7 @@ from typing import Dict, Optional, List
 @dataclass
 class SessionState:
     from_waid: str
+    channel: Optional[str] = None
     name: Optional[str] = None
     reason: Optional[str] = None
     email: Optional[str] = None

@@ -57,6 +57,7 @@ class InMemoryCalendar(CalendarProvider):
         patient_phone: Optional[str] = None,
         patient_name: Optional[str] = None,
         patient_email: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
     ) -> CalendarEvent:
         end = start + timedelta(minutes=duration_min)
         evt = CalendarEvent(

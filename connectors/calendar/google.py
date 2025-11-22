@@ -136,6 +136,7 @@ class GoogleCalendarProvider(CalendarProvider):
         patient_phone: Optional[str] = None,
         patient_name: Optional[str] = None,
         patient_email: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
     ) -> CalendarEvent:
         end = start + timedelta(minutes=duration_min)
         body: Dict[str, Any] = {
@@ -150,11 +151,40 @@ class GoogleCalendarProvider(CalendarProvider):
                 }
             },
         }
+        if idempotency_key:
+            body.setdefault("extendedProperties", {}).setdefault("private", {})["idempotency_key"] = idempotency_key
         attendees: list[dict] = []
         if patient_email:
             attendees.append({"email": patient_email})
         if attendees:
             body["attendees"] = attendees
+        # Idempotency check
+        if idempotency_key:
+            try:
+                existing = (
+                    self._service.events()
+                    .list(
+                        calendarId=self._calendar_id,
+                        privateExtendedProperty=f"idempotency_key={idempotency_key}",
+                        singleEvents=True,
+                        orderBy="startTime",
+                    )
+                    .execute()
+                    .get("items", [])
+                )
+                if existing:
+                    evt = existing[0]
+                    return CalendarEvent(
+                        id=evt.get("id", ""),
+                        start=start,
+                        end=end,
+                        title=title,
+                        description=description,
+                        patient_phone=patient_phone,
+                        patient_name=patient_name,
+                    )
+            except Exception:
+                pass
         try:
             if self._send_updates:
                 evt = (

@@ -5,10 +5,13 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Tuple, Union, Dict, Any
 
 from app.config import Settings
+import logging
 from agents.datetime_fr import parse_preferred_time_fr, format_fr_human
 from agents.session import SessionState
 from agents.replygen import greeting as gen_greeting, id_ack as gen_id_ack, confirmation as gen_confirmation
 from connectors.calendar.provider import get_calendar_provider
+
+logger = logging.getLogger(__name__)
 
 
 def _is_weekend(dt: datetime) -> bool:
@@ -252,8 +255,25 @@ def handle_message(text: str, st: SessionState, settings: Settings) -> Optional[
             provider = get_calendar_provider(settings)
             try:
                 start = datetime.fromisoformat(st.preferred_time_iso)
-                title = f"Mediflow - {st.name or ''} 🦷".strip()
-                desc = f"Motif: {st.reason or ''}".strip()
+                # Resolve calendar id per channel if overrides are set
+                try:
+                    ch = getattr(st, 'channel', None)
+                    cal_id = None
+                    if ch == 'web_demo' and getattr(settings, 'calendar_id_web_demo', None):
+                        cal_id = settings.calendar_id_web_demo
+                    elif ch == 'whatsapp' and getattr(settings, 'calendar_id_whatsapp', None):
+                        cal_id = settings.calendar_id_whatsapp
+                    if cal_id and provider and hasattr(provider, '_calendar_id'):
+                        setattr(provider, '_calendar_id', cal_id)
+                except Exception:
+                    pass
+                # Prepare title/desc and idempotency key
+                ch = getattr(st, 'channel', None) or 'whatsapp'
+                idem = f"{ch}:{st.from_waid}:{st.preferred_time_iso}"
+                base_title = f"Mediflow - {st.name or ''} 🦷".strip()
+                title = base_title if ch != 'web_demo' else f"DEMO — {base_title}"
+                base_desc = f"Motif: {st.reason or ''}".strip()
+                desc = base_desc if ch != 'web_demo' else f"Simulation — pas un vrai rendez-vous. {base_desc}"
                 if provider and provider.is_available(start, duration_min=30):
                     evt = provider.create_event(
                         start,
@@ -263,8 +283,22 @@ def handle_message(text: str, st: SessionState, settings: Settings) -> Optional[
                         patient_phone=st.from_waid,
                         patient_name=st.name,
                         patient_email=getattr(st, "email", None),
+                        idempotency_key=idem,
                     )
                     st.event_id = evt.id
+                    try:
+                        logger.info(
+                            "booking_created",
+                            extra={
+                                "channel": ch,
+                                "event_id": evt.id,
+                                "start": start.isoformat(),
+                                "idempotency_key": idem,
+                                "email_sent": bool(getattr(settings, "calendar_send_updates", False) and getattr(st, "email", None)),
+                            },
+                        )
+                    except Exception:
+                        pass
                 # Confirmation message: model-polished or templated
                 reply = None
                 if getattr(settings, "agent_generate_replies", False) and getattr(settings, "agent_generate_confirmations", True):

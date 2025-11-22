@@ -11,6 +11,7 @@ from connectors.calendar.provider import get_calendar_provider
 from agents.session import store as session_store
 from connectors.whatsapp.store import store as wa_store
 from app.api_web_demo import router as web_demo_router
+from state.web_demo_store import store as web_demo_store
 
 
 def create_app() -> FastAPI:
@@ -46,6 +47,38 @@ def create_app() -> FastAPI:
                 "google_configured": bool(s.google_creds_json and s.google_calendar_id),
                 "calendar_id": s.google_calendar_id,
             }
+
+        @app.post("/_debug/session/clear")
+        async def clear_session(waid: str):  # type: ignore
+            from agents.session import store as sess_store
+
+            sess_store.clear(waid)
+            return {"ok": True, "cleared": waid}
+
+        @app.post("/_debug/demo/clear")
+        async def clear_demo_session(session_id: str):  # type: ignore
+            # Remove from demo store (state + meta)
+            st = web_demo_store.get(session_id)
+            if st is None:
+                return {"ok": True, "cleared": False}
+            # crude clear: reset by recreating store entries
+            # direct remove (internal)
+            web_demo_store._states.pop(session_id, None)
+            meta = web_demo_store._meta.pop(session_id, None)
+            if meta and meta.date_key in web_demo_store._by_date:
+                web_demo_store._by_date[meta.date_key].discard(session_id)
+            return {"ok": True, "cleared": True}
+
+        @app.get("/_debug/demo/count")
+        async def demo_count(date_key: str | None = None):  # type: ignore
+            from datetime import datetime
+            from zoneinfo import ZoneInfo
+
+            s = load_settings()
+            if not date_key:
+                tz = ZoneInfo(getattr(s, "demo_timezone", "Europe/Amsterdam"))
+                date_key = datetime.now(tz).date().isoformat()
+            return {"date_key": date_key, "count": web_demo_store.count_for_date(date_key)}
 
         @app.post("/_debug/calendar/book_test")
         async def book_test(  # type: ignore
